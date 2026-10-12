@@ -383,10 +383,8 @@ async function recordingPplPage(){
       '<div id="prodRecAge" class="rhpp-summary-card" style="margin-top:10px"><span>Umur Saat Ini</span><strong>1 Hari</strong></div>'+
     '</div>'+
     '<div class="panel" style="padding:14px"><h4 id="prodRecDayTitle">2. Isi Data Hari ke-1</h4>'+
-      '<label>Pakan yang Dipakai<select name="feed_item" required><option value="">Pilih kandang dulu</option></select></label>'+
-      '<p id="prodRecStock" class="muted">Sisa stok: -</p>'+
-      '<label>Jumlah Pakan Dipakai (Zak/Satuan)<input type="number" name="feed_units" min="0" step="0.01" required placeholder="Contoh: 10"></label>'+
-      '<p id="prodRecKg" class="muted">Pemakaian: 0 Kg</p>'+
+      '<div><strong>Komposisi Pakan (bisa lebih dari satu jenis)</strong><div id="prodFeedRows"></div><div class="inline-actions"><button type="button" id="addFeed">+ Tambah Jenis Pakan</button></div></div>'+
+      '<p id="prodRecStock" class="muted">Sisa stok: -</p><p id="prodRecKg" class="muted">Total pemakaian: 0 Kg</p>'+
       '<label>Ayam Mati Hari Ini (ekor)<input type="number" name="mortality" min="0" value="0" required></label>'+
       '<label>Afkir / Dimusnahkan Hari Ini (ekor)<input type="number" name="culling" min="0" value="0" required></label>'+
       '<div><strong>Bobot Sampel Ayam (Kg/ekor)</strong><p class="muted">Isi dalam Kg desimal. Contoh: 63 gram = 0,063 · 500 gram = 0,500 · 630 gram = 0,630 · 850 gram = 0,850 · 1.200 gram = 1,200. Minimal satu sampel.</p><div id="weightRows"></div><button type="button" id="addWeight">+ Tambah Sampel Ayam</button></div>'+
@@ -471,7 +469,10 @@ async function recordingPplPage(){
   if(selectedHistoryAssignment)bindTableExportActions({tableId:'recordingHistoryTable',printId:'recordingHistoryPrint',pdfId:'recordingHistoryPdf',excelId:'recordingHistoryExcel',title:'Riwayat Recording Harian',filename:'Riwayat_Recording_'+recordingHistoryLabel(selectedHistoryAssignment).replace(/[^A-Za-z0-9_-]+/g,'_'),dropLast:true});
 
   const f=document.getElementById('prodRec'),wr=document.getElementById('weightRows'),saveBtn=document.getElementById('prodRecSave'),cancelBtn=document.getElementById('prodRecCancel');
-  let weights=[0],editingId=null,editingDay=null,feedStock=[];
+  let weights=[0],editingId=null,editingDay=null,feedStock=[],feedEntries=[{item_id:'',quantity_units:0}];
+  const feedRows=document.getElementById('prodFeedRows');
+  const renderFeedRows=()=>{feedRows.innerHTML=feedEntries.map((v,i)=>'<div class="panel" style="padding:10px;margin:8px 0"><label>Jenis Pakan '+(i+1)+'<select data-feed-item="'+i+'" required><option value="">Pilih pakan</option>'+feedStock.map(x=>'<option value="'+esc(x.item_id)+'" '+(v.item_id===x.item_id?'selected':'')+'>'+esc(x.code+' · '+String(x.name||'').replace(/^Pakan\\s+/i,'')+' · sisa '+prodFmt(x.remaining_units,2)+' '+(x.unit||'satuan'))+'</option>').join('')+'</select></label><label>Jumlah dipakai (zak/satuan)<input data-feed-units="'+i+'" type="number" min="0.01" step="0.01" required value="'+(v.quantity_units||'')+'" placeholder="Contoh: 10"></label>'+(feedEntries.length>1?'<button type="button" data-feed-delete="'+i+'">Hapus jenis ini</button>':'')+'</div>').join('');feedRows.querySelectorAll('[data-feed-item]').forEach(el=>el.onchange=()=>{feedEntries[Number(el.dataset.feedItem)].item_id=el.value;calc()});feedRows.querySelectorAll('[data-feed-units]').forEach(el=>el.oninput=()=>{feedEntries[Number(el.dataset.feedUnits)].quantity_units=prodNum(el.value);calc()});feedRows.querySelectorAll('[data-feed-delete]').forEach(el=>el.onclick=()=>{feedEntries.splice(Number(el.dataset.feedDelete),1);renderFeedRows();calc()})};
+  document.getElementById('addFeed').onclick=()=>{feedEntries.push({item_id:'',quantity_units:0});renderFeedRows()};
 
   const syncWeightsFromDom=()=>{
     wr.querySelectorAll('[data-weight]').forEach(x=>{const i=Number(x.dataset.weight);if(weights[i]!=null)weights[i]=prodNum(x.value)});
@@ -583,35 +584,17 @@ async function recordingPplPage(){
         ageBox.innerHTML='<span>Umur Saat Ini</span><strong>1 Hari</strong><small class="muted" style="display:block;margin-top:6px">Pilih kandang untuk melihat umur dan hari yang belum terisi.</small>';
       }
     }
-    const stock=feedStock.find(x=>x.item_id===f.feed_item.value);
-    const used=prodNum(f.feed_units.value);
-    document.getElementById('prodRecStock').textContent=stock?'Sisa stok tersedia: '+prodFmt(stock.remaining_units,2)+' '+(stock.unit||'Satuan')+' ('+prodFmt(stock.remaining_kg,2)+' Kg)':'Sisa stok: -';
-    document.getElementById('prodRecKg').textContent='Pemakaian: '+prodFmt(used*prodNum(stock?.kg_per_unit),2)+' Kg';
+    const totals=new Map();let totalKg=0;feedEntries.forEach(v=>{const st=feedStock.find(x=>x.item_id===v.item_id);if(st){totals.set(st.item_id,(totals.get(st.item_id)||0)+prodNum(v.quantity_units));totalKg+=prodNum(v.quantity_units)*prodNum(st.kg_per_unit)}});document.getElementById('prodRecStock').textContent=totals.size?'Stok dicek per jenis pakan. Pastikan pemakaian tidak melebihi sisa tiap jenis.':'Sisa stok: -';document.getElementById('prodRecKg').textContent='Total pemakaian seluruh pakan: '+prodFmt(totalKg,2)+' Kg';
   };
 
   const refreshFeedStock=async(selectedItem=null)=>{
-    feedStock=[];
-    f.feed_item.innerHTML='<option value="">Memuat pakan tersedia...</option>';
-    document.getElementById('prodRecStock').textContent='Sisa stok: -';
-    if(!f.assignment.value){f.feed_item.innerHTML='<option value="">Pilih Kandang / Kontrak dulu</option>';return}
+    feedStock=[];document.getElementById('prodRecStock').textContent='Sisa stok: -';if(!f.assignment.value){renderFeedRows();return}
     const {data,error}=await db.rpc('production_feed_stock',{p_contract_assignment_id:f.assignment.value});
     if(error){f.feed_item.innerHTML='<option value="">Gagal memuat stok</option>';return msg(error.message)}
+    feedStock=(data||[]).map(x=>({...x}));
     const editRec=editingId?recs.find(x=>x.id===editingId):null;
-    feedStock=(data||[]).map(x=>{
-      const y={...x};
-      if(editRec&&editRec.contract_assignment_id===f.assignment.value&&editRec.feed_item_id===x.item_id){
-        y.remaining_units=prodNum(y.remaining_units)+prodNum(editRec.feed_quantity_units);
-        y.remaining_kg=prodNum(y.remaining_kg)+prodNum(editRec.feed_kg);
-      }
-      return y;
-    }).filter(x=>prodNum(x.remaining_units)>0);
-    f.feed_item.innerHTML='<option value="">Pilih Pakan</option>'+feedStock.map(x=>{
-      const shortName=String(x.name||'').replace(/^Pakan\s+/i,'');
-      return '<option value="'+esc(x.item_id)+'">'+esc(x.code+' · '+shortName+' · '+prodFmt(x.remaining_units,2)+' '+(x.unit||'Satuan')+' · '+prodFmt(x.remaining_kg,2)+' Kg')+'</option>'
-    }).join('');
-    if(!feedStock.length)f.feed_item.innerHTML='<option value="">Tidak ada stok pakan tersedia</option>';
-    if(selectedItem)f.feed_item.value=selectedItem;
-    calc();
+    if(editRec){const old=await db.from('recording_feed_items').select('item_id,quantity_units,kg_per_unit').eq('recording_id',editingId);(old.data||[]).forEach(v=>{const st=feedStock.find(x=>x.item_id===v.item_id);if(st){st.remaining_units=prodNum(st.remaining_units)+prodNum(v.quantity_units);st.remaining_kg=prodNum(st.remaining_kg)+prodNum(v.quantity_units)*prodNum(v.kg_per_unit)}})}
+    feedStock=feedStock.filter(x=>prodNum(x.remaining_units)>0);renderFeedRows();if(selectedItem&&feedStock.some(x=>x.item_id===selectedItem)){feedEntries=[{item_id:selectedItem,quantity_units:0}];renderFeedRows()}calc();
   };
 
   const resetEdit=async()=>{
@@ -625,8 +608,8 @@ async function recordingPplPage(){
     const r=recs.find(x=>x.id===id);if(!r)return;
     editingId=r.id;editingDay=prodNum(r.age_days);
     f.assignment.value=r.contract_assignment_id;f.assignment.disabled=true;
-    f.mortality.value=prodNum(r.mortality);f.culling.value=prodNum(r.culling);
-    f.feed_units.value=prodNum(r.feed_quantity_units);f.notes.value=r.notes||'';
+    f.mortality.value=prodNum(r.mortality);f.culling.value=prodNum(r.culling);f.notes.value=r.notes||'';
+    const oldFeeds=await db.from('recording_feed_items').select('item_id,quantity_units').eq('recording_id',r.id);feedEntries=(oldFeeds.data&&oldFeeds.data.length?oldFeeds.data:[{item_id:r.feed_item_id||'',quantity_units:prodNum(r.feed_quantity_units)}]).map(v=>({item_id:v.item_id||'',quantity_units:prodNum(v.quantity_units)}));
     const ws=samples.filter(x=>x.recording_id===r.id).map(x=>prodNum(x.weight_g)/1000);
     weights=ws.length?ws:[prodNum(r.avg_weight_kg)];renderWeights();
     saveBtn.textContent='Simpan Perubahan';cancelBtn.style.display='';
@@ -639,7 +622,7 @@ async function recordingPplPage(){
     if(f.assignment.value)window.__pplRecordingHistoryAssignment=f.assignment.value;
     await recordingPplPage();
   };
-  f.feed_item.onchange=calc;f.feed_units.oninput=calc;calc();renderPerf();
+  calc();renderFeedRows();renderPerf();
 
   const autoLoadCurrentRecording=async()=>{
     if(!f.assignment.value||editingId)return false;
@@ -670,29 +653,13 @@ async function recordingPplPage(){
 
   f.onsubmit=async e=>{
     e.preventDefault();
-    const a=d.assignments.find(x=>x.id===f.assignment.value),ci=a&&d.chicks.find(x=>x.contract_assignment_id===a.id),stock=feedStock.find(x=>x.item_id===f.feed_item.value);
-    if(!a||!ci||!stock)return msg('Lengkapi kontrak, Chick-In dan pakan tersedia.');
+    const a=d.assignments.find(x=>x.id===f.assignment.value),ci=a&&d.chicks.find(x=>x.contract_assignment_id===a.id);if(!a||!ci||!feedEntries.length)return msg('Lengkapi kontrak, Chick-In dan minimal satu pakan.');
     if(weights.some(x=>x<=0))return msg('Bobot sampel wajib diisi.');
     if(weights.some(x=>x>10))return msg('Bobot sampel harus diisi dalam Kg. Contoh: 1.87 untuk 1.870 gram, bukan 1870.');
-    const feedUnits=prodNum(f.feed_units.value);
-    if(feedUnits<=0)return msg('Jumlah pakan dipakai harus lebih dari 0.');
+    const feeds=feedEntries.map(v=>({item_id:v.item_id,quantity_units:prodNum(v.quantity_units)}));if(feeds.some(v=>!v.item_id||v.quantity_units<=0))return msg('Pilih jenis pakan dan isi jumlah lebih dari 0 untuk setiap baris.');if(new Set(feeds.map(v=>v.item_id)).size!==feeds.length)return msg('Jenis pakan yang sama tidak boleh dipilih dua kali.');
     const {data:latestStockRows,error:latestStockError}=await db.rpc('production_feed_stock',{p_contract_assignment_id:a.id});
     if(latestStockError)return msg('Gagal mengecek stok pakan terbaru: '+latestStockError.message);
-    let latestStock=(latestStockRows||[]).find(x=>x.item_id===stock.item_id)||null;
-    if(editingId){
-      const editRec=recs.find(x=>x.id===editingId);
-      if(editRec&&editRec.feed_item_id===stock.item_id&&latestStock){
-        latestStock={...latestStock,remaining_units:prodNum(latestStock.remaining_units)+prodNum(editRec.feed_quantity_units)};
-      }
-    }
-    if(!latestStock||prodNum(latestStock.remaining_units)<=0){
-      await refreshFeedStock();
-      return msg('Stok pakan yang dipilih sudah habis. Pilih pakan lain yang masih tersedia.');
-    }
-    if(feedUnits>prodNum(latestStock.remaining_units)){
-      await refreshFeedStock(stock.item_id);
-      return msg('Pemakaian melebihi sisa stok terbaru. Sisa '+prodFmt(latestStock.remaining_units,2)+' '+(latestStock.unit||'Satuan')+'.');
-    }
+    let currentFeedStock=latestStockRows||[];if(editingId){const old=await db.from('recording_feed_items').select('item_id,quantity_units').eq('recording_id',editingId);(old.data||[]).forEach(v=>{const st=currentFeedStock.find(x=>x.item_id===v.item_id);if(st)st.remaining_units=prodNum(st.remaining_units)+prodNum(v.quantity_units)})}for(const v of feeds){const st=currentFeedStock.find(x=>x.item_id===v.item_id);if(!st||prodNum(st.remaining_units)<v.quantity_units){await refreshFeedStock();return msg('Stok tidak cukup untuk salah satu jenis pakan. Periksa sisa stok tiap jenis.')}}
     currentDay=editingId?editingDay:targetDayFor(a.id);
     if(!editingId&&currentDay<1)return msg('Hari DOC datang adalah Hari 0. Recording Hari 1 baru dapat diisi mulai besok.');
     if(!editingId&&recs.some(r=>r.contract_assignment_id===a.id&&prodNum(r.age_days)===currentDay)){
@@ -712,22 +679,7 @@ async function recordingPplPage(){
       }
     }
     const avg=weights.reduce((s,x)=>s+x,0)/weights.length;
-    const {error:saveError}=await db.rpc('save_recording_atomic',{
-      p_id:editingId||null,
-      p_assignment_id:a.id,
-      p_barn_id:a.barn_id,
-      p_recorded_on:prodDateAdd(ci.arrived_on,currentDay),
-      p_age_days:currentDay,
-      p_mortality:Math.trunc(prodNum(f.mortality.value)),
-      p_culling:Math.trunc(prodNum(f.culling.value)),
-      p_feed_item_id:stock.item_id,
-      p_feed_quantity_units:feedUnits,
-      p_sample_count:weights.length,
-      p_sample_weight_total_kg:weights.reduce((s,x)=>s+x,0),
-      p_notes:f.notes.value||null,
-      p_photo_data:photo,
-      p_weights:weights.map(weight_kg=>({weight_g:weight_kg*1000}))
-    });
+    const {error:saveError}=await db.rpc('save_recording_mixed_atomic',{p_id:editingId||null,p_assignment_id:a.id,p_barn_id:a.barn_id,p_recorded_on:prodDateAdd(ci.arrived_on,currentDay),p_age_days:currentDay,p_mortality:Math.trunc(prodNum(f.mortality.value)),p_culling:Math.trunc(prodNum(f.culling.value)),p_feed_items:feeds,p_sample_count:weights.length,p_sample_weight_total_kg:weights.reduce((sum,x)=>sum+x,0),p_notes:f.notes.value||null,p_photo_data:photo,p_weights:weights.map(weight_kg=>({weight_g:weight_kg*1000}))});
     if(saveError)return msg(saveError.message);
     await recordingPplPage();msg(wasEdit?'Recording PPL berhasil diperbarui.':'Recording PPL tersimpan dan performa dihitung otomatis.',true);
   };

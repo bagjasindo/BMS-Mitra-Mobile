@@ -122,3 +122,13 @@ Tahap proyek saat ini: **stabilisasi dan perbaikan bertahap berdasarkan temuan n
 - Area terdampak: semua ekspor yang memakai mesin bersama menerima standar lebar kolom; laporan yang sudah berbentuk tabel tetap mempertahankan baris dan kolom sumber. Perhitungan, transaksi, akses peran, dan tema aplikasi tidak diubah.
 - Status: **KODE DITERAPKAN — BELUM PASS GLOBAL** sampai pengujian unduh/buka dilakukan pada RHPP, keuangan, logistik, marketing, master data, dan audit/admin di HP serta desktop. Tidak mengklaim semua tombol Excel telah tervalidasi.
 - Commits: global `9336bd1`; ekstensi RHPP XLSX `273e75e`.
+
+
+## 10. Temuan PDF dibagikan ke WhatsApp — perbaikan mesin bersama (2026-10-12)
+
+- Temuan dari file PDF RHPP pengguna: isi menjadi teks monospaced polos, tabel/format laporan hilang.
+- Akar masalah: `BMSCore.savePdfHtml()` memakai `pdfBlobFromHtml()` yang meratakan HTML menjadi baris teks dan tidak mempertahankan layout visual.
+- Perubahan terbatas pada `bms-core.js`: tombol PDF yang memakai helper bersama sekarang membuka laporan HTML bergaya cetak, dengan aturan A4, tabel, header, dan warna dipertahankan, lalu menggunakan dialog Print/Save as PDF native browser. Jika popup diblokir, helper mengunduh HTML berformat sebagai fallback.
+- Tidak ada perubahan pada data, rumus, atau alur transaksi.
+- Commits: `cdfda07`, `c157062`.
+- **Status: BELUM PASS.** Harus diuji pada Android dan desktop. Alur native print dapat berbeda menurut browser. Fallback saat popup diblokir adalah HTML, bukan PDF; jangan menganggap tombol telah menghasilkan PDF sampai pengujian perangkat memastikan hasilnya.

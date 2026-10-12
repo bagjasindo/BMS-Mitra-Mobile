@@ -292,13 +292,7 @@
     const printHtml=String(html||'').replace('</head>','<meta name="viewport" content="width=device-width, initial-scale=1"><style>@page{size:A4 portrait;margin:12mm}html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif;font-size:10pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}table{width:100%;border-collapse:collapse;table-layout:auto}th,td{border:1px solid #b8c7d1;padding:5px;vertical-align:top;overflow-wrap:anywhere}th{background:#d9eaf7;color:#123b5d;font-weight:700}h1,h2,h3{break-after:avoid;page-break-after:avoid}tr,.ui-rhpp-card,.rhpp-panel,.ui-rhpp-kpi{break-inside:avoid;page-break-inside:avoid}button,.report-actions,.inline-actions{display:none!important}@media screen{body{padding:12px}}</style></head>');
     const blob=new Blob([printHtml],{type:'text/html;charset=utf-8'});
     const url=URL.createObjectURL(blob);
-    if(mobile&&scope.navigator?.share&&scope.navigator?.canShare&&typeof File!=='undefined'){
-      try{
-        // Share a print-ready HTML document rather than a fake text-only PDF.
-        const file=new File([blob],name.replace(/\\.pdf$/i,'.html'),{type:'text/html'});
-        if(scope.navigator.canShare({files:[file]})){await scope.navigator.share({files:[file],title:name.replace(/\\.pdf$/i,'')});return true}
-      }catch(error){if(error?.name==='AbortError')return false}
-    }
+    // Open the styled report directly so the browser's Print / Save as PDF flow can preserve layout.
     const w=scope.open?.(url,'_blank');
     if(w){
       try{w.addEventListener('load',()=>{try{w.focus();w.print()}catch(_){}} ,{once:true})}catch(_){}

@@ -141,3 +141,14 @@ Tahap proyek saat ini: **stabilisasi dan perbaikan bertahap berdasarkan temuan n
 - Rumus RHPP dan data tidak diubah.
 - Commit: `a7997cd`.
 - Status: **BELUM PASS** hingga PDF baru diperiksa di HP. Pastikan kolom Total terbaca utuh dan semua tabel tetap lengkap.
+
+
+## 12. Recording PPL multi-jenis pakan — penerapan awal (2026-10-12)
+
+- Perubahan kode: form Recording PPL sekarang menerima beberapa baris pakan, jumlah masing-masing, validasi pilihan duplikat, dan estimasi total kilogram berdasarkan `kg_per_unit`.
+- Perubahan database Supabase: tabel `recording_feed_items`, RPC `save_recording_mixed_atomic`, fungsi stok `production_feed_stock` yang menghitung detail campuran tanpa menghitung ganda, serta trigger `compute_recording_feed_kg` yang menjumlahkan semua jenis pakan.
+- Kompatibilitas: recording lama tanpa detail tetap dihitung melalui kolom legacy; recording baru menyimpan komposisi lengkap di tabel detail. Pengeditan memuat kembali komposisi detail dan menyimpan ulang sampel bobot.
+- Commit kode form: `8c7ec0ee25655ec6744cb90d4c5e23ae2d56bc12`; perbaikan form edit/reset: `b7fe02c4c7cf5d3230d54e8361290a8a7d8cb2e1`.
+- Verifikasi yang sudah dilakukan: keberadaan RPC dan fungsi stok terkonfirmasi di database; perhitungan konversi satuan uji SQL menunjukkan 2 satuan × 50 kg = 100 kg; tidak ada referensi form lama `f.feed_item`/`f.feed_units` tersisa pada file setelah perbaikan.
+- Batasan verifikasi: belum ada uji end-to-end lewat browser/perangkat dan belum ada uji penyimpanan recording nyata, pengeditan, dan rekonsiliasi stok setelah simpan. Perangkat remote untuk pemeriksaan sintaks tidak sedang online.
+- Status: **DITERAPKAN — BELUM PASS END-TO-END**. Jangan menandai PASS sebelum Bos menguji atau browser test tersedia. Pemeriksaan stok saat ini dilakukan sebelum simpan dari UI; validasi stok atomik/concurrency di dalam RPC masih perlu ditambahkan sebelum menganggap perlindungan stok kuat.

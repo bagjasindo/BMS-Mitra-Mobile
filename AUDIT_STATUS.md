@@ -112,3 +112,13 @@ Tahap proyek saat ini: **stabilisasi dan perbaikan bertahap berdasarkan temuan n
 - Ekspor kini membuat layout tabel datar, lebar tabel eksplisit, label/nilai dengan proporsi kolom, border dan header berformat; nama file ekstensi disesuaikan menjadi `.xls` karena formatnya HTML Excel-compatible, bukan berkas Office Open XML `.xlsx`.
 - Perhitungan RHPP, sumber data, tombol Cetak/PDF, dan transaksi tidak diubah.
 - Status: **PERBAIKAN KODE DITERAPKAN — BELUM PASS VISUAL** sampai file terbaru diunduh dan dibuka di Excel/HP serta desktop. Periksa bagian Identitas Siklus, Kinerja Produksi, Biaya Sapronak, Nilai RHPP, Rincian Panen, DOC, Pakan, dan OVK; pastikan semua nilai terbaca dan tidak terpotong.
+
+
+## 9. Standar global ekspor Excel (2026-10-12)
+
+- Perubahan global pada `bms-core.js`: seluruh ekspor yang menggunakan `BMSCore.excelBlob()` sekarang mendapat lebar kolom terstandar: kolom label pertama 18–36, kolom nilai kedua 16–28, kolom lanjutan 12–30. Ini mencegah kolom label/nilai terlalu sempit sekaligus membatasi laporan tabel yang sangat lebar.
+- Perbaikan RHPP PPL pada `modules/bms-production.js` tetap mengubah layout grid menjadi susunan datar khusus laporan, sehingga data RHPP tidak bergantung pada dukungan grid/flex aplikasi spreadsheet HP.
+- Ekstensi file RHPP sudah dipastikan kembali `.xlsx` karena `BMSCore.excelBlob()` menghasilkan workbook XLSX asli.
+- Area terdampak: semua ekspor yang memakai mesin bersama menerima standar lebar kolom; laporan yang sudah berbentuk tabel tetap mempertahankan baris dan kolom sumber. Perhitungan, transaksi, akses peran, dan tema aplikasi tidak diubah.
+- Status: **KODE DITERAPKAN — BELUM PASS GLOBAL** sampai pengujian unduh/buka dilakukan pada RHPP, keuangan, logistik, marketing, master data, dan audit/admin di HP serta desktop. Tidak mengklaim semua tombol Excel telah tervalidasi.
+- Commits: global `9336bd1`; ekstensi RHPP XLSX `273e75e`.

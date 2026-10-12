@@ -285,20 +285,28 @@
     return new Blob([pdf],{type:'application/pdf'});
   }
   async function savePdfHtml(html,fileName='Laporan.pdf'){
-    const name=String(fileName||'Laporan.pdf').replace(/[^A-Za-z0-9._-]+/g,'_').replace(/\.pdf$/i,'')+'.pdf';
-    const blob=pdfBlobFromHtml(html),mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(scope.navigator?.userAgent||'');
-    try{
-      if(mobile&&scope.navigator?.share&&scope.navigator?.canShare&&typeof File!=='undefined'){
-        const file=new File([blob],name,{type:'application/pdf'});
-        if(scope.navigator.canShare({files:[file]})){await scope.navigator.share({files:[file],title:name});return true}
-      }
-    }catch(error){if(error?.name==='AbortError')return false}
+    const name=String(fileName||'Laporan.pdf').replace(/[^A-Za-z0-9._-]+/g,'_').replace(/\\.pdf$/i,'')+'.pdf';
+    // Preserve the complete report layout. The former text-only PDF builder stripped tables, styles,
+    // colors and columns, causing PDFs shared to WhatsApp to look like raw text.
+    const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(scope.navigator?.userAgent||'');
+    const printHtml=String(html||'').replace('</head>','<meta name="viewport" content="width=device-width, initial-scale=1"><style>@page{size:A4 portrait;margin:12mm}html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif;font-size:10pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}table{width:100%;border-collapse:collapse;table-layout:auto}th,td{border:1px solid #b8c7d1;padding:5px;vertical-align:top;overflow-wrap:anywhere}th{background:#d9eaf7;color:#123b5d;font-weight:700}h1,h2,h3{break-after:avoid;page-break-after:avoid}tr,.ui-rhpp-card,.rhpp-panel,.ui-rhpp-kpi{break-inside:avoid;page-break-inside:avoid}button,.report-actions,.inline-actions{display:none!important}@media screen{body{padding:12px}}</style></head>');
+    const blob=new Blob([printHtml],{type:'text/html;charset=utf-8'});
     const url=URL.createObjectURL(blob);
-    if(mobile){
-      const w=scope.open?.(url,'_blank');
-      if(w){setTimeout(()=>URL.revokeObjectURL(url),60000);return true}
+    if(mobile&&scope.navigator?.share&&scope.navigator?.canShare&&typeof File!=='undefined'){
+      try{
+        // Share a print-ready HTML document rather than a fake text-only PDF.
+        const file=new File([blob],name.replace(/\\.pdf$/i,'.html'),{type:'text/html'});
+        if(scope.navigator.canShare({files:[file]})){await scope.navigator.share({files:[file],title:name.replace(/\\.pdf$/i,'')});return true}
+      }catch(error){if(error?.name==='AbortError')return false}
     }
-    const a=scope.document.createElement('a');a.href=url;a.download=name;scope.document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);return true;
+    const w=scope.open?.(url,'_blank');
+    if(w){
+      try{w.addEventListener('load',()=>{try{w.focus();w.print()}catch(_){}} ,{once:true})}catch(_){}
+      setTimeout(()=>URL.revokeObjectURL(url),120000);
+      return true;
+    }
+    // Popup-blocked fallback: download the complete styled report for opening and printing.
+    const a=scope.document.createElement('a');a.href=url;a.download=name.replace(/\\.pdf$/i,'.html');scope.document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),120000);return true;
   }
 
   function base64(bytes){let text='';for(let i=0;i<bytes.length;i+=32768)text+=String.fromCharCode(...bytes.subarray(i,i+32768));return scope.btoa(text)}

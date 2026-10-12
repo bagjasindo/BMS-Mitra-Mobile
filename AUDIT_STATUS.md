@@ -103,3 +103,12 @@ Tahap proyek saat ini: **stabilisasi dan perbaikan bertahap berdasarkan temuan n
 **Larangan:** jangan mengubah ritme kerja, tema Desktop klasik/HP, aturan RHPP terkunci, hak akses sah, atau fitur PASS tanpa kebutuhan terverifikasi. Audit berstatus belum diuji tetap terbuka; hasil PASS lama tidak berarti seluruh sistem otomatis 100% PASS.
 
 **Instruksi handoff chat:** baca bagian ini sebelum mengerjakan revisi per akun; tidak perlu mengulang scan PASS sebelumnya jika tidak ada perubahan terkait.
+
+
+## 8. Perbaikan ekspor Excel RHPP PPL (2026-10-12)
+
+- Temuan: hasil `RHPP_<kandang>_<siklus>.xlsx` memakai layout HTML grid/flex yang tidak diterjemahkan konsisten oleh aplikasi spreadsheet HP; label melebar di kolom A dan nilai tampak terpisah/terpotong.
+- Perubahan terbatas: `modules/bms-production.js`, handler tombol Excel pada `pplRhppViewPage` (commit `6bd207898b4e496ef1383f6a0e36dc14d2ed55fc`).
+- Ekspor kini membuat layout tabel datar, lebar tabel eksplisit, label/nilai dengan proporsi kolom, border dan header berformat; nama file ekstensi disesuaikan menjadi `.xls` karena formatnya HTML Excel-compatible, bukan berkas Office Open XML `.xlsx`.
+- Perhitungan RHPP, sumber data, tombol Cetak/PDF, dan transaksi tidak diubah.
+- Status: **PERBAIKAN KODE DITERAPKAN — BELUM PASS VISUAL** sampai file terbaru diunduh dan dibuka di Excel/HP serta desktop. Periksa bagian Identitas Siklus, Kinerja Produksi, Biaya Sapronak, Nilai RHPP, Rincian Panen, DOC, Pakan, dan OVK; pastikan semua nilai terbaca dan tidak terpotong.

@@ -590,7 +590,7 @@ async function recordingPplPage(){
   const refreshFeedStock=async(selectedItem=null)=>{
     feedStock=[];document.getElementById('prodRecStock').textContent='Sisa stok: -';if(!f.assignment.value){renderFeedRows();return}
     const {data,error}=await db.rpc('production_feed_stock',{p_contract_assignment_id:f.assignment.value});
-    if(error){f.feed_item.innerHTML='<option value="">Gagal memuat stok</option>';return msg(error.message)}
+    if(error){feedStock=[];renderFeedRows();return msg(error.message)}
     feedStock=(data||[]).map(x=>({...x}));
     const editRec=editingId?recs.find(x=>x.id===editingId):null;
     if(editRec){const old=await db.from('recording_feed_items').select('item_id,quantity_units,kg_per_unit').eq('recording_id',editingId);(old.data||[]).forEach(v=>{const st=feedStock.find(x=>x.item_id===v.item_id);if(st){st.remaining_units=prodNum(st.remaining_units)+prodNum(v.quantity_units);st.remaining_kg=prodNum(st.remaining_kg)+prodNum(v.quantity_units)*prodNum(v.kg_per_unit)}})}
@@ -598,9 +598,8 @@ async function recordingPplPage(){
   };
 
   const resetEdit=async()=>{
-    editingId=null;editingDay=null;f.assignment.disabled=false;f.reset();weights=[0];renderWeights();
-    saveBtn.textContent='Simpan Data Hari Ini';cancelBtn.style.display='none';feedStock=[];
-    f.feed_item.innerHTML='<option value="">Pilih Kandang / Kontrak dulu</option>';calc();
+    editingId=null;editingDay=null;f.assignment.disabled=false;f.reset();weights=[0];feedEntries=[{item_id:'',quantity_units:0}];renderWeights();
+    saveBtn.textContent='Simpan Data Hari Ini';cancelBtn.style.display='none';feedStock=[];renderFeedRows();calc();
   };
   cancelBtn.onclick=resetEdit;
 
@@ -613,7 +612,7 @@ async function recordingPplPage(){
     const ws=samples.filter(x=>x.recording_id===r.id).map(x=>prodNum(x.weight_g)/1000);
     weights=ws.length?ws:[prodNum(r.avg_weight_kg)];renderWeights();
     saveBtn.textContent='Simpan Perubahan';cancelBtn.style.display='';
-    await refreshFeedStock(r.feed_item_id);
+    await refreshFeedStock();renderFeedRows();
     window.scrollTo({top:0,behavior:'smooth'});
   }
 

@@ -2754,9 +2754,36 @@ async function pplRhppViewPage(){
     if(pBtn)pBtn.onclick=openPrint;
     if(pdfBtn)pdfBtn.onclick=()=>BMSCore.savePdfHtml(docHtml(),fileBase+'.pdf').catch(error=>msg(error?.message||'PDF gagal dibuat.'));
     if(xBtn)xBtn.onclick=()=>{
-      const blob=BMSCore.excelBlob(['\ufeff'+bmsExcelHtml(docHtml())]);
+      // Excel must use a flat, table-based layout: grid/flex cards render as a single narrow column in mobile spreadsheet apps.
+      const clone=exportArea?.cloneNode(true);if(!clone)return;
+      clone.querySelectorAll('button,.report-actions,style').forEach(el=>el.remove());
+      clone.querySelectorAll('.ui-rhpp-head,.ui-rhpp-kpis,.ui-rhpp-grid').forEach(el=>{
+        el.removeAttribute('class');
+        el.style.display='block';el.style.width='100%';el.style.margin='0 0 12px 0';
+      });
+      clone.querySelectorAll('.ui-rhpp-card').forEach(el=>{
+        el.removeAttribute('class');el.style.display='block';el.style.width='100%';el.style.margin='0 0 12px 0';el.style.border='1px solid #b8cbd8';
+      });
+      clone.querySelectorAll('h2,h3').forEach(el=>{
+        el.style.backgroundColor='#d9eaf7';el.style.color='#123b5d';el.style.fontWeight='bold';el.style.padding='8px';el.style.textAlign='left';
+      });
+      clone.querySelectorAll('table').forEach(table=>{
+        table.style.width='100%';table.style.tableLayout='fixed';table.style.borderCollapse='collapse';table.style.marginBottom='8px';
+        table.querySelectorAll('td,th').forEach(cell=>{
+          cell.style.border='1px solid #cbd5e1';cell.style.padding='6px';cell.style.verticalAlign='top';cell.style.fontSize='10pt';cell.style.whiteSpace='normal';
+        });
+        if(table.querySelectorAll('tr').length && table.querySelector('tbody tr td') && table.querySelectorAll('tbody tr td').length===2){
+          table.querySelectorAll('tbody tr').forEach(row=>{
+            const cells=row.querySelectorAll('td');
+            if(cells.length===2){cells[0].style.width='68%';cells[1].style.width='32%';cells[1].style.textAlign='right';}
+          });
+        }
+      });
+      clone.querySelectorAll('.ui-rhpp-kpi').forEach(el=>{el.style.display='block';el.style.width='100%';el.style.padding='5px';el.style.borderBottom='1px solid #d8e2ea';});
+      const html='<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;font-size:10pt}table{mso-width-source:userset;border-collapse:collapse;table-layout:fixed;width:100%}td,th{border:1px solid #cbd5e1;padding:6px;vertical-align:top;white-space:normal}h2,h3{background:#d9eaf7;color:#123b5d;padding:8px} @page{size:A4 portrait;margin:12mm}</style></head><body><h2>'+esc(company.company_name||company.legal_name||'PT Bagjasindo Mandiri Sindangkasih')+'</h2><h3>REKAP HASIL PEMELIHARAAN PETERNAK (RHPP)</h3>'+clone.innerHTML+'</body></html>';
+      const blob=BMSCore.excelBlob(['\ufeff'+html]);
       const url=URL.createObjectURL(blob),link=document.createElement('a');
-      link.href=url;link.download=fileBase+'.xlsx';document.body.appendChild(link);link.click();link.remove();
+      link.href=url;link.download=fileBase+'.xls';document.body.appendChild(link);link.click();link.remove();
       setTimeout(()=>URL.revokeObjectURL(url),1000);
     };
   }

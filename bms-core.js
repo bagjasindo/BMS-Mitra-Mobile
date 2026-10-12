@@ -139,7 +139,12 @@
     sheets.forEach((s,i)=>{
       if(s.rows.length>1048576||s.rows.some(r=>r.length>16384))throw new Error('Jumlah data melampaui batas Excel. Gunakan backup JSON.');
       const maxCols=Math.max(1,...s.rows.map(r=>r.length));
-      const widths=Array.from({length:maxCols},(_,ci)=>Math.min(45,Math.max(10,...s.rows.slice(0,500).map(r=>String(r[ci]??'').length+2))));
+      // Global export widths: readable label/value columns on mobile, bounded widths for wide reports.
+      const widths=Array.from({length:maxCols},(_,ci)=>{
+        const content=Math.max(0,...s.rows.slice(0,500).map(r=>String(r[ci]??'').replace(/\\s+/g,' ').length+2));
+        const min=ci===0?18:(ci===1?16:12),max=ci===0?36:(ci===1?28:30);
+        return Math.min(max,Math.max(min,content));
+      });
       let data='<worksheet xmlns="'+ns+'"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>'+widths.map((w,ci)=>'<col min="'+(ci+1)+'" max="'+(ci+1)+'" width="'+w+'" customWidth="1"/>').join('')+'</cols><sheetData>';
       s.rows.forEach((row,ri)=>{
         const nonEmpty=row.filter(v=>String(v??'').trim()!=='').length;

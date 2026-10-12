@@ -132,3 +132,12 @@ Tahap proyek saat ini: **stabilisasi dan perbaikan bertahap berdasarkan temuan n
 - Tidak ada perubahan pada data, rumus, atau alur transaksi.
 - Commits: `cdfda07`, `c157062`.
 - **Status: BELUM PASS.** Harus diuji pada Android dan desktop. Alur native print dapat berbeda menurut browser. Fallback saat popup diblokir adalah HTML, bukan PDF; jangan menganggap tombol telah menghasilkan PDF sampai pengujian perangkat memastikan hasilnya.
+
+
+## 11. RHPP PDF — lebar kolom nilai dan total (2026-10-12)
+
+- Temuan perangkat: pada PDF yang dibagikan, kolom laporan rincian terlalu sempit sehingga angka besar seperti total terbungkus per digit/baris dan tanggal terpecah.
+- Perubahan terbatas: gaya cetak RHPP pada `modules/bms-production.js` menggunakan A4 landscape, memastikan tabel memakai lebar tersedia, menambah padding sel, dan mencegah pemenggalan kata/angka sembarangan.
+- Rumus RHPP dan data tidak diubah.
+- Commit: `a7997cd`.
+- Status: **BELUM PASS** hingga PDF baru diperiksa di HP. Pastikan kolom Total terbaca utuh dan semua tabel tetap lengkap.

@@ -2468,7 +2468,7 @@ const RHPP_SCREEN_STYLE='<style>'+
 '@media(max-width:600px){.rhpp-ui .ui-rhpp-kpis,.rhpp-page .ui-rhpp-kpis{grid-template-columns:repeat(2,1fr)}}'+
 '</style>';
 const RHPP_PRINT_STYLE='<style>'+
-'@page{size:A4 portrait;margin:8mm}'+
+'@page{size:A4 landscape;margin:8mm}'+
 '*{box-sizing:border-box}'+
 'html,body{margin:0;padding:0;background:#fff;font-family:Arial,Helvetica,sans-serif;color:#17212b;font-size:10px;line-height:1.35;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}'+
 '.print-sheet{width:194mm;max-width:194mm;margin:0 auto;padding:0}'+
@@ -2494,8 +2494,8 @@ const RHPP_PRINT_STYLE='<style>'+
 '.ui-rhpp-grid,.rhpp-grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:3mm!important;margin-bottom:3mm!important}'+
 '.ui-rhpp-card,.rhpp-panel{border:1px solid #cbd9e2!important;border-radius:4px!important;padding:0!important;margin:0!important;background:#fff!important;overflow:hidden!important}'+
 '.ui-rhpp-card h3,.rhpp-panel h3,.rhpp-section-head h3{margin:0!important;padding:2.1mm 2.5mm!important;background:#0b5f8f!important;color:#fff!important;font-size:10px!important;line-height:1.2!important;font-weight:800!important}'+
-'.ui-rhpp-card table,.tablewrap table,.rhpp-panel table,.ui-rhpp-table table{width:100%!important;border-collapse:collapse!important;table-layout:auto!important}'+
-'.ui-rhpp-card th,.ui-rhpp-card td,.tablewrap th,.tablewrap td,.rhpp-panel th,.rhpp-panel td,.ui-rhpp-table th,.ui-rhpp-table td{border:.35px solid #aebfca!important;padding:1.8mm 2mm!important;font-size:9px!important;line-height:1.25!important;vertical-align:middle!important;color:#253746!important}'+
+'.ui-rhpp-card table,.tablewrap table,.rhpp-panel table,.ui-rhpp-table table{width:100%!important;min-width:100%!important;border-collapse:collapse!important;table-layout:auto!important}'+
+'.ui-rhpp-card th,.ui-rhpp-card td,.tablewrap th,.tablewrap td,.rhpp-panel th,.rhpp-panel td,.ui-rhpp-table th,.ui-rhpp-table td{border:.35px solid #aebfca!important;padding:2mm 2.2mm!important;font-size:9px!important;line-height:1.25!important;vertical-align:middle!important;color:#253746!important;overflow-wrap:normal!important;word-break:normal!important}'+
 '.ui-rhpp-card td:first-child{color:#56697a!important}'+
 '.ui-rhpp-card td:last-child{font-weight:700!important}'+
 '.ui-rhpp-card thead th,.tablewrap thead th,.rhpp-panel thead th,.ui-rhpp-table thead th{background:#14a9cc!important;color:#fff!important;font-weight:800!important;text-align:center!important;white-space:normal!important}'+

@@ -3407,7 +3407,8 @@ async function financeReportPage(){
 }
 
 
-async function financeCashRequestPage(){
+async function financeCashRequestPage(editId=null){
+  if(editId!==null)window.__cashRequestEditId=editId;
   const [rr,ir,br,cr]=await Promise.all([
     db.from('finance_cash_requests').select('*').order('request_date',{ascending:false}).order('created_at',{ascending:false}),
     db.from('finance_cash_request_items').select('*').order('sort_order',{ascending:true}),
@@ -3416,7 +3417,23 @@ async function financeCashRequestPage(){
   ]);
   const err=[rr,ir,br,cr].find(x=>x.error)?.error;if(err)return layout('<section class="panel"><h3>Form Pengajuan Kas</h3><p class="error">'+esc(err.message)+'</p></section>');
   const requests=rr.data||[],items=ir.data||[],barnRows=br.data||[],company=cr.data||{};
+  const editRequest=requests.find(r=>r.id===window.__cashRequestEditId&&r.status==='DRAFT')||null;
+  if(window.__cashRequestEditId&&!editRequest)window.__cashRequestEditId='';
   const emptyGroup=()=>({type:'KANDANG',name:'',items:[{description:'',amount:'',remarks:''}]});
+  if(editRequest&&window.__cashRequestLoadedId!==editRequest.id){
+    const grouped=new Map();
+    items.filter(x=>x.request_id===editRequest.id).forEach(x=>{
+      const raw=String(x.group_name||''),type=raw==='BOP UMUM'?'BOP_UMUM':raw==='BOP KANTOR'?'BOP_KANTOR':/^KANDANG\\s+/.test(raw)?'KANDANG':'PROYEK';
+      const name=type==='KANDANG'?raw.replace(/^KANDANG\\s+/,''):type==='BOP_UMUM'?'BOP UMUM':type==='BOP_KANTOR'?'BOP KANTOR':raw;
+      const key=type+'|'+name;
+      if(!grouped.has(key))grouped.set(key,{type,name,items:[]});
+      grouped.get(key).items.push({description:x.description||'',amount:String(x.amount??''),remarks:x.remarks||''});
+    });
+    window.__cashRequestGroups=[...grouped.values()];
+    if(!window.__cashRequestGroups.length)window.__cashRequestGroups=[emptyGroup()];
+    window.__cashRequestLoadedId=editRequest.id;
+  }
+  if(!editRequest&&window.__cashRequestLoadedId){window.__cashRequestGroups=null;window.__cashRequestLoadedId='';}
   window.__cashRequestGroups=window.__cashRequestGroups||[emptyGroup()];
   const groups=window.__cashRequestGroups;
   const barnOptions='<option value="">Pilih Kandang</option>'+barnRows.map(b=>'<option value="'+esc(b.name||b.code||b.location||'')+'">'+esc(b.name||b.code||b.location||'-')+'</option>').join('');
@@ -3425,8 +3442,8 @@ async function financeCashRequestPage(){
     const rows=(g.items||[]).map((x,ii)=>'<tr><td>'+(ii+1)+'</td><td><input data-cr-desc="'+gi+'-'+ii+'" value="'+esc(x.description||'')+'" placeholder="Uraian kebutuhan"></td><td><input data-cr-amount="'+gi+'-'+ii+'" type="text" inputmode="decimal" autocomplete="off" value="'+esc(x.amount?Number(x.amount).toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2}):'')+'" placeholder="0,00"></td><td><input data-cr-remarks="'+gi+'-'+ii+'" value="'+esc(x.remarks||'')+'" placeholder="Keterangan"></td><td><button type="button" data-cr-remove-item="'+gi+'-'+ii+'">Hapus</button></td></tr>').join('');
     return '<section class="panel cash-request-group"><div class="form-grid"><label>Jenis Kelompok<select data-cr-type="'+gi+'"><option value="KANDANG" '+(g.type==='KANDANG'?'selected':'')+'>Kandang</option><option value="BOP_UMUM" '+(g.type==='BOP_UMUM'?'selected':'')+'>BOP Umum</option><option value="BOP_KANTOR" '+(g.type==='BOP_KANTOR'?'selected':'')+'>BOP Kantor</option><option value="PROYEK" '+(g.type==='PROYEK'?'selected':'')+'>Proyek / Lainnya</option></select></label><label>Nama Kelompok'+nameField+'</label></div><div class="tablewrap"><table><thead><tr><th>No</th><th>Uraian</th><th>Jumlah</th><th>Keterangan</th><th>Aksi</th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="inline-actions"><button type="button" data-cr-add-item="'+gi+'">Tambah Rincian</button>'+(groups.length>1?'<button type="button" data-cr-remove-group="'+gi+'">Hapus Kelompok</button>':'')+'</div></section>';
   }).join('');
-  const history=requests.map(r=>{const total=items.filter(x=>x.request_id===r.id).reduce((s,x)=>s+Number(x.amount||0),0);return '<tr><td>'+prodDateId(r.request_date)+'</td><td>'+esc(r.request_number)+'</td><td>'+esc(r.status)+'</td><td>Rp '+prodFmt(total,0)+'</td><td class="inline-actions"><button type="button" data-cr-view="'+r.id+'">Lihat</button><button type="button" data-cr-print="'+r.id+'">Cetak</button><button type="button" data-cr-excel="'+r.id+'">Excel</button>'+(r.status==='DRAFT'?'<button type="button" data-cr-delete="'+r.id+'">Hapus</button>':'')+'</td></tr>';}).join('');
-  layout('<section class="panel"><h3>Form Pengajuan Kas</h3><p class="muted"><strong>Catatan pengajuan mandiri.</strong> Jenis Kandang, BOP Umum, BOP Kantor, dan Proyek hanya untuk pengelompokan dokumen. Tidak terhubung ke realisasi BOP, Arus Kas, Kasbon, Hutang, RHPP, atau Laba/Rugi.</p><form id="cashRequestForm"><div class="form-vertical compact-form"><label>Tanggal Pengajuan<input id="crDate" type="date" required value="'+new Date().toISOString().slice(0,10)+'"></label><label>Perihal<input id="crSubject" value="PENGAJUAN KAS" required></label><label>Catatan<input id="crNotes"></label></div><div id="cashRequestGroups">'+groupHtml+'</div><div class="inline-actions"><button type="button" id="crAddGroup">Tambah Kelompok</button><button type="submit">Simpan Draft</button></div></form></section><section class="panel"><h3>Riwayat Pengajuan Kas</h3><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>No. Pengajuan</th><th>Status</th><th>Total</th><th>Aksi</th></tr></thead><tbody>'+history+'</tbody></table></div></section>');
+  const history=requests.map(r=>{const total=items.filter(x=>x.request_id===r.id).reduce((s,x)=>s+Number(x.amount||0),0);return '<tr><td>'+prodDateId(r.request_date)+'</td><td>'+esc(r.request_number)+'</td><td>'+esc(r.status)+'</td><td>Rp '+prodFmt(total,0)+'</td><td class="inline-actions"><button type="button" data-cr-view="'+r.id+'">Lihat</button><button type="button" data-cr-print="'+r.id+'">Cetak</button><button type="button" data-cr-excel="'+r.id+'">Excel</button>'+(r.status==='DRAFT'?'<button type="button" data-cr-edit="'+r.id+'">Edit</button><button type="button" data-cr-delete="'+r.id+'">Hapus</button>':'')+'</td></tr>';}).join('');
+  layout('<section class="panel"><h3>Form Pengajuan Kas</h3><p class="muted"><strong>Catatan pengajuan mandiri.</strong> Jenis Kandang, BOP Umum, BOP Kantor, dan Proyek hanya untuk pengelompokan dokumen. Tidak terhubung ke realisasi BOP, Arus Kas, Kasbon, Hutang, RHPP, atau Laba/Rugi.</p><form id="cashRequestForm"><div class="form-vertical compact-form"><label>Tanggal Pengajuan<input id="crDate" type="date" required value="'+esc(editRequest?.request_date||new Date().toISOString().slice(0,10))+'"></label><label>Perihal<input id="crSubject" value="'+esc(editRequest?.subject||'PENGAJUAN KAS')+'" required></label><label>Catatan<input id="crNotes" value="'+esc(editRequest?.notes||'')+'"></label></div><div id="cashRequestGroups">'+groupHtml+'</div><div class="inline-actions"><button type="button" id="crAddGroup">Tambah Kelompok</button><button type="submit">'+(editRequest?'Simpan Perubahan':'Simpan Draft')+'</button>'+(editRequest?'<button type="button" id="crEditCancel">Batal Edit</button>':'')+'</div></form></section><section class="panel"><h3>Riwayat Pengajuan Kas</h3><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>No. Pengajuan</th><th>Status</th><th>Total</th><th>Aksi</th></tr></thead><tbody>'+history+'</tbody></table></div></section>');
   const formatCashRequestAmount=v=>{const raw=String(v||'').replace(/[^0-9,]/g,'').replace(/,/g,'');if(!raw)return '';return Number(raw).toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2});};
   root.querySelectorAll('[data-cr-amount]').forEach(inp=>{inp.addEventListener('focus',()=>{const n=Number(String(inp.value||'0').replace(/\./g,'').replace(',','.'))||0;inp.value=n?n.toLocaleString('id-ID',{maximumFractionDigits:0}):'';});inp.addEventListener('blur',()=>{inp.value=formatCashRequestAmount(inp.value);});});
   const readGroups=()=>groups.map((g,gi)=>{
@@ -3444,11 +3461,26 @@ async function financeCashRequestPage(){
   document.getElementById('cashRequestForm').onsubmit=async e=>{
     e.preventDefault();const gs=readGroups(),rows=[];gs.forEach(g=>g.items.forEach(x=>{if(g.name&&x.description&&x.amount>0)rows.push({group_name:g.name,description:x.description,amount:x.amount,remarks:x.remarks});}));if(!rows.length)return msg('Isi minimal satu kelompok dan satu rincian pengajuan.');
     const date=document.getElementById('crDate').value,subject=document.getElementById('crSubject').value.trim(),notes=document.getElementById('crNotes').value.trim(),no='PK-'+String(date).replaceAll('-','')+'-'+String(Date.now()).slice(-6);
-    const {data:req,error}=await db.from('finance_cash_requests').insert({request_number:no,request_date:date,subject,notes,status:'DRAFT'}).select('id').single();if(error)return msg(error.message);
-    const {error:ie}=await db.from('finance_cash_request_items').insert(rows.map((x,i)=>({...x,request_id:req.id,sort_order:i+1})));if(ie){await db.from('finance_cash_requests').delete().eq('id',req.id);return msg(ie.message);}
-    window.__cashRequestGroups=[emptyGroup()];msg('Draft pengajuan tersimpan.');await financeCashRequestPage();
+    let requestId=editRequest?.id||'';
+    if(editRequest){
+      const {error:ue}=await db.from('finance_cash_requests').update({request_date:date,subject,notes}).eq('id',editRequest.id).eq('status','DRAFT');
+      if(ue)return msg(ue.message);
+      requestId=editRequest.id;
+      const {error:ie}=await db.from('finance_cash_request_items').insert(rows.map((x,i)=>({...x,request_id:requestId,sort_order:i+1})));
+      if(ie)return msg('Header diperbarui, tetapi rincian lama dipertahankan karena rincian baru gagal disimpan: '+ie.message);
+      const oldIds=items.filter(x=>x.request_id===requestId).map(x=>x.id).filter(Boolean);
+      if(oldIds.length){const {error:de}=await db.from('finance_cash_request_items').delete().in('id',oldIds);if(de)return msg('Rincian baru tersimpan, tetapi rincian lama belum terhapus. Periksa sebelum mengedit ulang. '+de.message);}
+      msg('Draft pengajuan kas berhasil diperbarui.',true);
+    }else{
+      const {data:req,error}=await db.from('finance_cash_requests').insert({request_number:no,request_date:date,subject,notes,status:'DRAFT'}).select('id').single();if(error)return msg(error.message);
+      const {error:ie}=await db.from('finance_cash_request_items').insert(rows.map((x,i)=>({...x,request_id:req.id,sort_order:i+1})));if(ie){await db.from('finance_cash_requests').delete().eq('id',req.id);return msg(ie.message);}
+      msg('Draft pengajuan tersimpan.',true);
+    }
+    window.__cashRequestGroups=[emptyGroup()];window.__cashRequestEditId='';window.__cashRequestLoadedId='';await financeCashRequestPage();
   };
   const docHtml=id=>{const r=requests.find(x=>x.id===id);if(!r)return '';const its=items.filter(x=>x.request_id===id),names=[...new Set(its.map(x=>x.group_name))],total=its.reduce((s,x)=>s+Number(x.amount||0),0);const body=names.map(g=>'<tr><th colspan="4">'+esc(g)+'</th></tr>'+its.filter(x=>x.group_name===g).map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.description)+'</td><td style="text-align:right">'+prodFmt(x.amount,0)+'</td><td>'+esc(x.remarks||'')+'</td></tr>').join('')).join('');return '<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif}.head{text-align:center}table{width:100%;border-collapse:collapse}th,td{border:1px solid #111;padding:6px}.total{font-weight:700}</style></head><body><div class="head"><h2>'+esc(company.company_name||company.legal_name||'Nama perusahaan belum diisi')+'</h2><div>'+esc(company.address||'')+'</div><hr><h3>FORM PENGAJUAN KAS</h3></div><p><b>No:</b> '+esc(r.request_number)+'<br><b>Perihal:</b> '+esc(r.subject)+'<br><b>Tgl. Pengajuan:</b> '+prodDateId(r.request_date)+'</p><table><thead><tr><th>NO</th><th>URAIAN</th><th>JUMLAH</th><th>KET.</th></tr></thead><tbody>'+body+'<tr class="total"><td colspan="2">TOTAL</td><td style="text-align:right">'+prodFmt(total,0)+'</td><td></td></tr></tbody></table></body></html>';};
+  root.querySelectorAll('[data-cr-edit]').forEach(btn=>btn.onclick=async()=>{window.__cashRequestGroups=null;window.__cashRequestLoadedId='';window.__cashRequestEditId=btn.dataset.crEdit||'';await financeCashRequestPage();root.querySelector('#cashRequestForm')?.scrollIntoView({behavior:'smooth',block:'start'});});
+  const crEditCancel=document.getElementById('crEditCancel');if(crEditCancel)crEditCancel.onclick=async()=>{window.__cashRequestGroups=[emptyGroup()];window.__cashRequestEditId='';window.__cashRequestLoadedId='';await financeCashRequestPage();};
   root.querySelectorAll('[data-cr-view],[data-cr-print]').forEach(btn=>btn.onclick=()=>{const id=btn.dataset.crView||btn.dataset.crPrint,w=window.open('','_blank');if(!w)return msg('Popup diblokir browser.');w.document.write(docHtml(id));w.document.close();if(btn.dataset.crPrint)setTimeout(()=>w.print(),300);});
   root.querySelectorAll('[data-cr-excel]').forEach(btn=>btn.onclick=()=>{const html=bmsExcelHtml(docHtml(btn.dataset.crExcel)),blob=BMSCore.excelBlob(['\ufeff'+html]),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Form_Pengajuan_Kas.xlsx';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);});
   root.querySelectorAll('[data-cr-delete]').forEach(btn=>btn.onclick=async()=>{if(!await appConfirm('Hapus draft pengajuan ini?'))return;const {error}=await db.from('finance_cash_requests').delete().eq('id',btn.dataset.crDelete).eq('status','DRAFT');if(error)return msg(error.message);await financeCashRequestPage();});

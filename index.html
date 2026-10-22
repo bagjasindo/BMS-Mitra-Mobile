@@ -53,7 +53,7 @@
       await loadScript('./main-2321.js?v=2386-classic-restored',30000);
       await loadScript('./modules/bms-master-logistics.js?v=2386-classic-restored',30000);
       await loadScript('./modules/bms-production.js?v=2386-classic-restored',30000);
-      await loadScript('./modules/bms-finance.js?v=2386-classic-restored',30000);
+      await loadScript('./modules/bms-finance.js?v=2387-expedition-date-order',30000);
       await loadScript('./modules/bms-admin.js?v=2386-classic-restored',30000);
       await loadScript('./modules/bms-rhpp-users.js?v=2386-classic-restored',30000);
       await loadScript('./modules/bms-dashboard-reports.js?v=2386-classic-restored',30000);
@@ -74,7 +74,7 @@ if('serviceWorker' in navigator){
     location.reload();
   });
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js?v=2386-classic-restored',{scope:'./'}).then(reg=>{
+    navigator.serviceWorker.register('./sw.js?v=2387-expedition-date-order',{scope:'./'}).then(reg=>{
       reg.update().catch(()=>{});
       if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});
       reg.addEventListener('updatefound',()=>{

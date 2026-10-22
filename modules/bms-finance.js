@@ -1435,7 +1435,7 @@ async function financeExpeditionBusinessPage(){
   const destinationText=t=>{const ds=detailsForTrip(t.id);return ds.length?ds.map(x=>x.destination_name).join(' • '):(t.destination||'-');};
   const cargoText=t=>{const ds=detailsForTrip(t.id);return ds.length?ds.map(x=>[x.cargo,prodNum(x.qty)?prodFmt(x.qty,Number.isInteger(prodNum(x.qty))?0:2):'',x.unit||''].filter(Boolean).join(' ')).join(' • '):(t.cargo||'-');};
   const totalQtyFor=t=>{const ds=detailsForTrip(t.id);return ds.length?ds.reduce((n,x)=>n+prodNum(x.qty),0):prodNum(t.total_qty);};
-  const invoiceTrips=id=>links.filter(x=>x.invoice_id===id).map(x=>trips.find(t=>t.id===x.trip_id)).filter(Boolean);
+  const invoiceTrips=id=>links.filter(x=>x.invoice_id===id).map(x=>trips.find(t=>t.id===x.trip_id)).filter(Boolean).sort((a,b)=>String(a.trip_date||'').localeCompare(String(b.trip_date||''))||String(a.created_at||'').localeCompare(String(b.created_at||''))||String(a.id||'').localeCompare(String(b.id||'')));
   const sumFor=id=>summaries.find(x=>x.invoice_id===id);
   const invoiceLabel=id=>{const i=invoices.find(x=>x.id===id),x=sumFor(id);return i?i.invoice_number+' · '+i.customer_name+' · Sisa Rp '+prodFmt(x?.receivable||0,0):'-';};
   const totalInvoice=summaries.reduce((n,x)=>n+prodNum(x.invoice_total),0);

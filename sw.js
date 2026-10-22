@@ -1,5 +1,5 @@
 const CACHE_PREFIX='bms-pwa-shell-';
-const CACHE_NAME=CACHE_PREFIX+'v2386-classic-restored';
+const CACHE_NAME=CACHE_PREFIX+'v2387-expedition-date-order';
 const SHELL=[
   './',
   './index.html',
@@ -11,7 +11,7 @@ const SHELL=[
   './main-2321.js?v=2386-classic-restored',
   './modules/bms-master-logistics.js?v=2386-classic-restored',
   './modules/bms-production.js?v=2386-classic-restored',
-  './modules/bms-finance.js?v=2386-classic-restored',
+  './modules/bms-finance.js?v=2387-expedition-date-order',
   './modules/bms-admin.js?v=2386-classic-restored',
   './modules/bms-rhpp-users.js?v=2386-classic-restored',
   './modules/bms-dashboard-reports.js?v=2386-classic-restored',

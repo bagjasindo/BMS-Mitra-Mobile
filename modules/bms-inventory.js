@@ -46,7 +46,7 @@ async function barnPhysicalInventoryPage(){
   window.__barnInventoryState=old;
   const found=entries.find(x=>x.id===old.editId);
   const barnOptions=barnsRows.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.code+' · '+x.name)+'</option>').join('');
-  const typeOptions=types.filter(x=>x.active||x.id===found?.equipment_type_id).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.code+' · '+x.name+' ('+x.unit+')</option>').join('');
+  const typeOptions=types.filter(x=>x.active||x.id===found?.equipment_type_id).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.code+' · '+x.name+' ('+x.unit+')')+'</option>').join('');
   const filtered=old.shown?entries.filter(x=>!old.barnId||x.barn_id===old.barnId):[];
   const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const typeOf=id=>types.find(x=>x.id===id)||{};

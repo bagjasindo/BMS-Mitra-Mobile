@@ -3,32 +3,66 @@ async function barnEquipmentMasterPage(){
   if(profile?.role!=='ADMIN')return layout('<section class="panel">Master peralatan hanya untuk Administrator.</section>');
   const {data,error}=await db.from('barn_equipment_types').select('*').order('name');
   const rows=data||[];
-  layout('<section class="panel"><h3>Master Peralatan Kandang</h3><p class="muted">Daftar jenis peralatan untuk opname fisik, bukan transaksi pembelian atau nilai aset.</p><form id="equipmentTypeForm" class="form-vertical">'+
-    '<label>Kode Peralatan<input name="code" required maxlength="40" placeholder="Contoh: TMP-001"></label>'+
+  const unitOptions=['UNIT','PCS','BUAH','SET','PAKET','PASANG','ROLL','METER','LITER','KG','ZAK','BOX','DUS','BOTOL'];
+  const state=window.__barnEquipmentMasterState||{query:'',editId:''};
+  window.__barnEquipmentMasterState=state;
+  const unitSelect='<select name="unit" required>'+unitOptions.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('')+'</select>';
+  layout('<section class="panel"><h3>Master Peralatan Kandang</h3><p class="muted">Kode dibuat otomatis saat disimpan. Kategori tersimpan otomatis sebagai PERALATAN.</p>'+
+    '<form id="equipmentTypeForm" class="form-vertical">'+
+    '<label>Kode Peralatan<input id="equipmentCodePreview" readonly value="Otomatis saat disimpan"></label>'+
     '<label>Nama Peralatan<input name="name" required maxlength="150" placeholder="Contoh: Tempat Pakan"></label>'+
-    '<label>Kategori<input name="category" required value="PERALATAN"></label>'+
-    '<label>Satuan<input name="unit" required value="UNIT"></label>'+
-    '<label>Keterangan<input name="notes"></label><button type="submit">Simpan Master</button></form></section>'+
-    '<section class="panel"><h3>Daftar Master</h3><div class="tablewrap"><table><thead><tr><th>Kode</th><th>Nama</th><th>Kategori</th><th>Satuan</th><th>Status</th><th>Aksi</th></tr></thead><tbody>'+
-    rows.map(x=>'<tr><td>'+esc(x.code)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.category)+'</td><td>'+esc(x.unit)+'</td><td>'+(x.active?'Aktif':'Nonaktif')+'</td><td><button type="button" data-equipment-edit="'+esc(x.id)+'">Edit</button></td></tr>').join('')+
-    '</tbody></table></div></section>');
+    '<label>Satuan'+unitSelect+'</label>'+
+    '<label>Keterangan<input name="notes"></label>'+
+    '<div class="report-actions"><button type="submit" id="equipmentSave">Simpan Master</button><button type="button" id="equipmentCancelEdit" hidden>Batal Edit</button></div></form></section>'+
+    '<section class="panel"><h3>Daftar Master</h3>'+
+    '<label>Cari Peralatan<input id="equipmentMasterSearch" type="search" placeholder="Cari kode, nama, satuan, atau keterangan" value="'+esc(state.query)+'"></label>'+
+    '<p class="muted" id="equipmentSearchCount"></p>'+
+    '<div class="tablewrap"><table><thead><tr><th>Kode</th><th>Nama Peralatan</th><th>Satuan</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="equipmentMasterRows"></tbody></table></div></section>');
   if(error)msg(error.message);
   const form=document.getElementById('equipmentTypeForm');
-  let editId=null;
+  const search=document.getElementById('equipmentMasterSearch');
+  const list=document.getElementById('equipmentMasterRows');
+  const count=document.getElementById('equipmentSearchCount');
+  const cancel=document.getElementById('equipmentCancelEdit');
+  const codePreview=document.getElementById('equipmentCodePreview');
+  const applyEdit=()=>{
+    const item=rows.find(x=>x.id===state.editId);
+    if(!item){state.editId='';form.reset();codePreview.value='Otomatis saat disimpan';cancel.hidden=true;return;}
+    codePreview.value=item.code;
+    form.elements.name.value=item.name||'';
+    if(!unitOptions.includes(item.unit)){
+      const option=document.createElement('option');option.value=item.unit;option.textContent=item.unit;form.elements.unit.appendChild(option);
+    }
+    form.elements.unit.value=item.unit||'UNIT';
+    form.elements.notes.value=item.notes||'';
+    cancel.hidden=false;
+  };
+  const redraw=()=>{
+    const term=state.query.trim().toLocaleLowerCase('id-ID');
+    const filtered=rows.filter(x=>[x.code,x.name,x.unit,x.notes].some(v=>String(v||'').toLocaleLowerCase('id-ID').includes(term)));
+    count.textContent=filtered.length+' dari '+rows.length+' peralatan';
+    list.innerHTML=filtered.map(x=>'<tr><td>'+esc(x.code)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.unit)+'</td><td>'+(x.active?'Aktif':'Nonaktif')+'</td><td><button type="button" data-equipment-edit="'+esc(x.id)+'">Edit</button></td></tr>').join('')||'<tr><td colspan="5">Peralatan tidak ditemukan.</td></tr>';
+    list.querySelectorAll('[data-equipment-edit]').forEach(btn=>btn.onclick=()=>{
+      state.editId=btn.dataset.equipmentEdit;
+      applyEdit();form.scrollIntoView({behavior:'smooth',block:'start'});
+    });
+  };
+  search.oninput=()=>{state.query=search.value;redraw();};
+  cancel.onclick=()=>{state.editId='';applyEdit();};
+  applyEdit();redraw();
   form.onsubmit=async ev=>{
     ev.preventDefault();
     const f=new FormData(form);
-    const obj={code:String(f.get('code')||'').trim().toUpperCase(),name:String(f.get('name')||'').trim(),category:String(f.get('category')||'').trim(),unit:String(f.get('unit')||'').trim().toUpperCase(),notes:String(f.get('notes')||'').trim()};
-    if(!obj.code||!obj.name||!obj.unit)return msg('Kode, nama dan satuan wajib diisi.');
-    const result=editId?await db.from('barn_equipment_types').update(obj).eq('id',editId):await db.from('barn_equipment_types').insert(obj);
+    const obj={name:String(f.get('name')||'').trim(),unit:String(f.get('unit')||'').trim().toUpperCase(),notes:String(f.get('notes')||'').trim()};
+    if(!obj.name||!obj.unit)return msg('Nama dan satuan wajib diisi.');
+    // Kode dan kategori tidak dikirim saat edit; kode ditetapkan oleh trigger database saat insert.
+    const result=state.editId
+      ?await db.from('barn_equipment_types').update(obj).eq('id',state.editId)
+      :await db.from('barn_equipment_types').insert({...obj,category:'PERALATAN',code:'AUTO'});
     if(result.error)return msg(result.error.message);
+    state.editId='';
     await barnEquipmentMasterPage();msg('Master peralatan tersimpan.',true);
   };
-  root.querySelectorAll('[data-equipment-edit]').forEach(btn=>btn.onclick=()=>{
-    const x=rows.find(r=>r.id===btn.dataset.equipmentEdit);if(!x)return;
-    editId=x.id;for(const key of ['code','name','category','unit','notes'])form.elements[key].value=x[key]||'';
-    form.scrollIntoView({behavior:'smooth',block:'start'});
-  });
 }
 async function barnPhysicalInventoryPage(){
   const role=profile?.role||'';

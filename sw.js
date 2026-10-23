@@ -1,5 +1,5 @@
 const CACHE_PREFIX='bms-pwa-shell-';
-const CACHE_NAME=CACHE_PREFIX+'v2387-expedition-date-order';
+const CACHE_NAME=CACHE_PREFIX+'v2388-barn-inventory';
 const SHELL=[
   './',
   './index.html',
@@ -12,6 +12,7 @@ const SHELL=[
   './modules/bms-master-logistics.js?v=2386-classic-restored',
   './modules/bms-production.js?v=2386-classic-restored',
   './modules/bms-finance.js?v=2387-expedition-date-order',
+  './modules/bms-inventory.js?v=2388-barn-inventory',
   './modules/bms-admin.js?v=2386-classic-restored',
   './modules/bms-rhpp-users.js?v=2386-classic-restored',
   './modules/bms-dashboard-reports.js?v=2386-classic-restored',

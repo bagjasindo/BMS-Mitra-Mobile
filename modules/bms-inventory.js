@@ -52,8 +52,19 @@ async function barnPhysicalInventoryPage(){
   const typeOf=id=>types.find(x=>x.id===id)||{};
   const barnOf=id=>barnsRows.find(x=>x.id===id)||{};
   const tableRows=filtered.slice().sort((a,b)=>String(barnOf(a.barn_id).code||'').localeCompare(String(barnOf(b.barn_id).code||''))||String(typeOf(a.equipment_type_id).name||'').localeCompare(String(typeOf(b.equipment_type_id).name||'')));
+  // Cetak opname juga menampilkan item master yang belum pernah dicatat.
+  const printRows=tableRows.slice();
+  const printBarns=old.barnId?barnsRows.filter(b=>b.id===old.barnId):barnsRows;
+  for(const b of printBarns){
+    for(const t of types.filter(x=>x.active)){
+      if(!printRows.some(x=>x.barn_id===b.id&&x.equipment_type_id===t.id)){
+        printRows.push({barn_id:b.id,equipment_type_id:t.id,quantity:null,condition:'-',checked_on:null,location_notes:'',notes:''});
+      }
+    }
+  }
+  printRows.sort((a,b)=>String(barnOf(a.barn_id).code||'').localeCompare(String(barnOf(b.barn_id).code||''))||String(typeOf(a.equipment_type_id).name||'').localeCompare(String(typeOf(b.equipment_type_id).name||'')));
   const table='<div class="tablewrap"><table><thead><tr><th>No.</th><th>Kandang</th><th>Kode</th><th>Nama Peralatan</th><th>Jumlah Data</th><th>Kondisi</th><th>Terakhir Dicek</th><th>Letak/Keterangan</th><th>Jumlah Fisik Dicek</th></tr></thead><tbody>'+
-    tableRows.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(barnOf(x.barn_id).name||'-')+'</td><td>'+esc(typeOf(x.equipment_type_id).code||'-')+'</td><td>'+esc(typeOf(x.equipment_type_id).name||'-')+'</td><td>'+fmtNumber(x.quantity)+' '+esc(typeOf(x.equipment_type_id).unit||'')+'</td><td>'+esc(x.condition)+'</td><td>'+esc(x.checked_on||'-')+'</td><td>'+esc([x.location_notes,x.notes].filter(Boolean).join(' · ')||'-')+'</td><td>____________</td></tr>').join('')+
+    printRows.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(barnOf(x.barn_id).name||'-')+'</td><td>'+esc(typeOf(x.equipment_type_id).code||'-')+'</td><td>'+esc(typeOf(x.equipment_type_id).name||'-')+'</td><td>'+(x.quantity==null?'-':fmtNumber(x.quantity))+' '+esc(typeOf(x.equipment_type_id).unit||'')+'</td><td>'+esc(x.condition)+'</td><td>'+esc(x.checked_on||'-')+'</td><td>'+esc([x.location_notes,x.notes].filter(Boolean).join(' · ')||'-')+'</td><td>____________</td></tr>').join('')+
     '</tbody></table></div>';
   const formHtml=canWrite?'<section class="panel"><h3>Input / Koreksi Inventori Fisik</h3><p class="muted">Pencatatan ini tidak memengaruhi stok gudang, transaksi pembelian, RHPP maupun laba/rugi.</p>'+
     '<form id="physicalInventoryForm" class="form-vertical"><label>Kandang<select name="barn_id" required><option value="">Pilih Kandang</option>'+barnOptions+'</select></label>'+

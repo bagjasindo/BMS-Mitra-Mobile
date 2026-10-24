@@ -2731,7 +2731,7 @@ async function pplRhppViewPage(){
         }
       });
       clone.querySelectorAll('.ui-rhpp-kpi').forEach(el=>{el.style.display='block';el.style.width='100%';el.style.padding='5px';el.style.borderBottom='1px solid #d8e2ea';});
-      const html='<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;font-size:10pt}table{mso-width-source:userset;border-collapse:collapse;table-layout:fixed;width:100%}td,th{border:1px solid #cbd5e1;padding:6px;vertical-align:top;white-space:normal}h2,h3{background:#d9eaf7;color:#123b5d;padding:8px} @page{size:A4 portrait;margin:12mm}</style></head><body><h2>'+esc(company.company_name||company.legal_name||'PT Bagjasindo Mandiri Sindangkasih')+'</h2><h3>REKAP HASIL PEMELIHARAAN PETERNAK (RHPP)</h3>'+clone.innerHTML+'</body></html>';
+      const html='<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;font-size:10pt}table{mso-width-source:userset;border-collapse:collapse;table-layout:fixed;width:100%}td,th{border:1px solid #cbd5e1;padding:6px;vertical-align:top;white-space:normal}h2,h3{background:#d9eaf7;color:#123b5d;padding:8px} @page{size:A4 portrait;margin:12mm}</style></head><body><h2>'+esc(company.company_name||company.legal_name||'Nama perusahaan belum diisi')+'</h2><h3>REKAP HASIL PEMELIHARAAN PETERNAK (RHPP)</h3>'+clone.innerHTML+'</body></html>';
       const blob=BMSCore.excelBlob(['\ufeff'+html]);
       const url=URL.createObjectURL(blob),link=document.createElement('a');
       link.href=url;link.download=fileBase+'.xlsx';document.body.appendChild(link);link.click();link.remove();

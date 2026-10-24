@@ -285,7 +285,7 @@
     return new Blob([pdf],{type:'application/pdf'});
   }
   async function savePdfHtml(html,fileName='Laporan.pdf'){
-    const name=String(fileName||'Laporan.pdf').replace(/[^A-Za-z0-9._-]+/g,'_').replace(/\\.pdf$/i,'')+'.pdf';
+    const name=String(fileName||'Laporan.pdf').replace(/[^A-Za-z0-9._-]+/g,'_').replace(/\.pdf$/i,'')+'.pdf';
     // Preserve the complete report layout. The former text-only PDF builder stripped tables, styles,
     // colors and columns, causing PDFs shared to WhatsApp to look like raw text.
     const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(scope.navigator?.userAgent||'');
@@ -300,7 +300,7 @@
       return true;
     }
     // Popup-blocked fallback: download the complete styled report for opening and printing.
-    const a=scope.document.createElement('a');a.href=url;a.download=name.replace(/\\.pdf$/i,'.html');scope.document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),120000);return true;
+    const a=scope.document.createElement('a');a.href=url;a.download=name.replace(/\.pdf$/i,'.html');scope.document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),120000);return true;
   }
 
   function base64(bytes){let text='';for(let i=0;i<bytes.length;i+=32768)text+=String.fromCharCode(...bytes.subarray(i,i+32768));return scope.btoa(text)}

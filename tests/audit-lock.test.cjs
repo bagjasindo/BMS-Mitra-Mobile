@@ -5,14 +5,15 @@ const path=require('node:path');
 const root=path.join(__dirname,'..');
 const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 
-test('AUDIT-LOCK build baseline stays synchronized across PWA and recovery artifacts',()=>{
+test('AUDIT-LOCK PWA cache and versioned application assets stay synchronized',()=>{
   const index=read('index.html');
   const sw=read('sw.js');
-  const schema=read('supabase/schema_current.sql');
-  const runbook=read('docs/BMS_RECOVERY_RUNBOOK.md');
-  const build='2386';
-  assert.match(index,new RegExp('v='+build+'-classic-restored'));
-  assert.match(sw,new RegExp('v'+build+'-classic-restored'));
+  const cache=sw.match(/const CACHE_NAME=CACHE_PREFIX\+'([^']+)'/)[1];
+  assert.ok(index.includes('./sw.js?'+cache.replace(/^v/,'v=')), 'registered worker matches cache build');
+  const scripts=[...index.matchAll(/loadScript\('(\.\/[^']+)'/g)].map(m=>m[1]);
+  const styles=[...index.matchAll(/rel="stylesheet" href="(\.\/[^\"]+)"/g)].map(m=>m[1]);
+  assert.ok(scripts.length>=10&&styles.length>=2);
+  for(const asset of [...scripts,...styles])assert.ok(sw.includes("'"+asset+"'"),'uncached or mismatched asset: '+asset);
   // Recovery schema/runbook are independently versioned recovery artifacts.
   // Their build number must not be forced to match a frontend-only cache/export build.
 });
@@ -113,7 +114,7 @@ test('OWNER global read-only keeps report filters interactive and blocks mutatio
 });
 
 
-test('mobile PDF saves real files instead of routing PDF buttons through print',()=>{
+test('PDF actions preserve report layout through the shared browser Save as PDF workflow',()=>{
   const core=read('bms-core.js');
   const main=read('main-2321.js');
   const logistics=read('modules/bms-master-logistics.js');
@@ -124,7 +125,12 @@ test('mobile PDF saves real files instead of routing PDF buttons through print',
   assert.match(core,/function pdfBlobFromHtml/);
   assert.match(core,/async function savePdfHtml/);
   assert.match(core,/application\/pdf/);
-  assert.match(core,/navigator\.share/);
+  assert.match(core,/text\/html;charset=utf-8/);
+  assert.match(core,/w\.print\(\)/);
+  assert.match(core,/print-color-adjust:exact/);
+  // Current documented workflow preserves HTML layout. Its blocked-popup fallback must
+  // identify itself as HTML, never label HTML bytes as a completed PDF download.
+  assert.match(core,/a\.download=name\.replace\(/);
   for(const src of [main,logistics,production,finance,rhpp,reports])assert.match(src,/BMSCore\.savePdfHtml/);
   for(const src of [main,logistics,production,finance,rhpp,reports])assert.doesNotMatch(src,/Pdf[^\n]{0,160}onclick[^\n]{0,160}(?:print\(|openPrint|printOpen)/);
 });

@@ -62,6 +62,13 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
   console.log('PASS: cached application shell loads offline');
   await command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
   await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  const editActions=await evaluate("const box=document.createElement('div');box.id='auditEditActions';box.innerHTML='<button>Simpan Perubahan</button><button>Batal Edit</button><button>Batal Koreksi</button><button>Edit</button><button>Hapus</button>';document.body.appendChild(box);decorateMobileActionIcons(box);decorateMobileActionIcons(box);return [...box.querySelectorAll('button')].map(b=>({text:b.textContent,icon:b.dataset.mobileActionIcon||null}));");
+  assert.deepEqual(editActions,[
+    {text:'Simpan Perubahan',icon:null},{text:'Batal Edit',icon:null},
+    {text:'Batal Koreksi',icon:null},{text:'✏️',icon:'1'},{text:'🗑️',icon:'1'}
+  ]);
+  await evaluate("document.querySelector('#auditEditActions').remove()");
+  console.log('PASS: mobile save/cancel keep labels; edit and delete retain distinct icons');
   const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync(path.join(__dirname,'output/login-mobile.png'),Buffer.from(shot.data,'base64'));
   assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
   console.log('PASS: mobile login fits a 390px viewport');

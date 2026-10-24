@@ -1,5 +1,5 @@
 const CACHE_PREFIX='bms-pwa-shell-';
-const CACHE_NAME=CACHE_PREFIX+'v2389-master-search';
+const CACHE_NAME=CACHE_PREFIX+'v2390-mobile-edit-labels';
 const SHELL=[
   './',
   './index.html',
@@ -7,10 +7,10 @@ const SHELL=[
   './mobile-form-responsive.css?v=2386-classic-restored',
   './vendor/supabase-2.57.0.js',
   './bms-data-config.js?v=2386-classic-restored',
-  './bms-core.js?v=2386-classic-restored',
-  './main-2321.js?v=2388-barn-inventory',
+  './bms-core.js?v=2390-mobile-edit-labels',
+  './main-2321.js?v=2390-mobile-edit-labels',
   './modules/bms-master-logistics.js?v=2386-classic-restored',
-  './modules/bms-production.js?v=2386-classic-restored',
+  './modules/bms-production.js?v=2390-mobile-edit-labels',
   './modules/bms-finance.js?v=2387-expedition-date-order',
   './modules/bms-inventory.js?v=2389-master-search',
   './modules/bms-admin.js?v=2388-barn-inventory',

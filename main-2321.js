@@ -1059,6 +1059,8 @@ function decorateMobileActionIcons(scope=root){
     const label=String(btn.textContent||'').trim();
     if(!label||btn.dataset.mobileActionIcon==='1')return;
     const low=label.toLowerCase();
+    // Form save/cancel actions keep their full labels, including while editing.
+    if(/^(simpan|batal)\b/.test(low))return;
     let icon='';
     if(/hapus|delete|remove/.test(low))icon='🗑️';
     else if(/edit|koreksi|ubah/.test(low))icon='✏️';

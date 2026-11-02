@@ -3284,3 +3284,13 @@ main select.app-select-native{
   .inline-actions button.mobile-icon-action,
   .report-actions button.mobile-icon-action{flex:0 0 38px!important}
 }
+
+/* Feed monitoring on each active barn card, with readable phone units. */
+.dashboard-feed-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.dashboard-feed-summary>div{min-width:0;padding:9px;background:#f0f9fa;border:1px solid #cce8eb;border-radius:8px}
+.dashboard-feed-summary span,.dashboard-feed-summary small{display:block;font-size:10px;color:var(--bms-muted);line-height:1.5}
+.dashboard-feed-summary strong{display:block;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.dashboard-feed-history{margin-top:8px;font-size:11px}
+.dashboard-feed-history summary{cursor:pointer;color:var(--bms-muted);padding:5px 0}
+.dashboard-feed-history>div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px;padding:5px 0;border-bottom:1px solid #edf0f3}
+@media(max-width:420px){.dashboard-feed-summary{grid-template-columns:1fr}}

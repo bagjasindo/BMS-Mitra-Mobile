@@ -1,9 +1,9 @@
 const CACHE_PREFIX='bms-pwa-shell-';
-const CACHE_NAME=CACHE_PREFIX+'v2390-mobile-edit-labels';
+const CACHE_NAME=CACHE_PREFIX+'v2391-dashboard-feed';
 const SHELL=[
   './',
   './index.html',
-  './style.css?v=2386-classic-restored',
+  './style.css?v=2391-dashboard-feed',
   './mobile-form-responsive.css?v=2386-classic-restored',
   './vendor/supabase-2.57.0.js',
   './bms-data-config.js?v=2386-classic-restored',
@@ -15,7 +15,7 @@ const SHELL=[
   './modules/bms-inventory.js?v=2389-master-search',
   './modules/bms-admin.js?v=2388-barn-inventory',
   './modules/bms-rhpp-users.js?v=2386-classic-restored',
-  './modules/bms-dashboard-reports.js?v=2386-classic-restored',
+  './modules/bms-dashboard-reports.js?v=2391-dashboard-feed',
   './bms-start.js?v=2386-classic-restored',
   './assets/bms_login_logo.jpg',
   './assets/bms_app_icon_180.png?v=6-original-20261001',

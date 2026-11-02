@@ -16341,7 +16341,14 @@ begin
     'external_shipments',(select coalesce(jsonb_agg(to_jsonb(x)),'[]'::jsonb) from public.logistics_external_shipments x),
     'external_shipment_items',(select coalesce(jsonb_agg(to_jsonb(x)),'[]'::jsonb) from public.logistics_external_shipment_items x),
     'returns',(select coalesce(jsonb_agg(to_jsonb(x)),'[]'::jsonb) from public.logistics_returns x),
-    'return_items',(select coalesce(jsonb_agg(to_jsonb(x)),'[]'::jsonb) from public.logistics_return_items x)
+    'return_items',(select coalesce(jsonb_agg(to_jsonb(x)),'[]'::jsonb) from public.logistics_return_items x),
+    'feed_monitoring_version',1,
+    'recording_feed_items',(select coalesce(jsonb_agg(to_jsonb(x)),'[]'::jsonb) from (select recording_id,item_id,quantity_units,kg_per_unit from public.recording_feed_items) x),
+    'mandiri_feed_purchases',(select coalesce(jsonb_agg(to_jsonb(x)),'[]'::jsonb) from (select id,item_id from public.logistics_mandiri_purchases) x),
+    'mandiri_feed_allocations',(select coalesce(jsonb_agg(to_jsonb(x)),'[]'::jsonb) from (select purchase_id,contract_assignment_id,quantity from public.logistics_mandiri_purchase_allocations) x),
+    'retained_feed',(select coalesce(jsonb_agg(to_jsonb(x)),'[]'::jsonb) from (select id,source_assignment_id,item_id,quantity from public.logistics_mitra_retained_feed) x),
+    'company_feed_movements',(select coalesce(jsonb_agg(to_jsonb(x)),'[]'::jsonb) from (select retained_feed_id,contract_assignment_id,direction,quantity from public.logistics_company_feed_movements) x),
+    'feed_adjustments',(select coalesce(jsonb_agg(to_jsonb(x)),'[]'::jsonb) from (select contract_assignment_id,item_id,adjustment_units from public.production_feed_stock_adjustments) x)
   );
 end
 $function$

@@ -1,3 +1,66 @@
+// Monitoring only: mirrors production feed stock, including mixed-feed recording.
+function dashboardFeedSummary(g,assignment){
+  const number=value=>value===null||value===undefined||value===''?null:(Number.isFinite(Number(value))?Number(value):null);
+  const rows=(g.recordings||[]).filter(r=>r.contract_assignment_id===assignment.id);
+  const items=new Map((g.items||[]).map(i=>[i.id,i]));
+  const mixed=new Map();
+  for(const line of g.recording_feed_items||[]){
+    if(!mixed.has(line.recording_id))mixed.set(line.recording_id,[]);
+    mixed.get(line.recording_id).push(line);
+  }
+  const isZak=item=>/^(zak|sak)$/i.test(String(item?.unit||'').trim());
+  const used=new Map(),days=new Map();
+  for(const r of rows){
+    const lines=mixed.get(r.id)|| (r.feed_item_id?[{item_id:r.feed_item_id,quantity_units:r.feed_quantity_units}]:[]);
+    let zak=0,known=lines.length>0;
+    for(const line of lines){
+      const units=number(line.quantity_units);
+      if(units===null||!isZak(items.get(line.item_id)))known=false;
+      else zak+=units;
+      if(units!==null)used.set(line.item_id,(used.get(line.item_id)||0)+units);
+    }
+    const kg=number(r.feed_kg),date=String(r.recorded_on||'');
+    if(!date)continue;
+    const day=days.get(date)||{date,kg:0,zak:0};
+    day.kg=day.kg===null||kg===null?null:day.kg+kg;
+    day.zak=day.zak===null||!known?null:day.zak+zak;
+    days.set(date,day);
+  }
+  const daily=[...days.values()].sort((a,b)=>b.date.localeCompare(a.date));
+  if(g.feed_monitoring_version!==1)return {daily:[],remainingKg:null,remainingZak:null};
+  const balance=new Map(),adjustment=new Map();
+  const add=(id,qty)=>balance.set(id,(balance.get(id)||0)+Number(qty||0));
+  const joinLines=(headers,lines,key,sign)=>{
+    const ids=new Set((headers||[]).filter(h=>h.contract_assignment_id===assignment.id).map(h=>h.id));
+    for(const line of lines||[])if(ids.has(line[key]))add(line.item_id,sign*Number(line.quantity||0));
+  };
+  joinLines(g.shipments,g.shipment_items,'shipment_id',1);
+  joinLines(g.external_shipments,g.external_shipment_items,'external_shipment_id',1);
+  joinLines(g.returns,g.return_items,'return_id',-1);
+  const purchases=new Map((g.mandiri_feed_purchases||[]).map(p=>[p.id,p]));
+  if(assignment.cycle_type==='MANDIRI')for(const line of g.mandiri_feed_allocations||[]){
+    if(line.contract_assignment_id===assignment.id)add(purchases.get(line.purchase_id)?.item_id,line.quantity);
+  }
+  const retained=new Map((g.retained_feed||[]).map(r=>[r.id,r]));
+  for(const line of g.retained_feed||[])if(line.source_assignment_id===assignment.id)add(line.item_id,-Number(line.quantity||0));
+  for(const line of g.company_feed_movements||[])if(line.contract_assignment_id===assignment.id){
+    add(retained.get(line.retained_feed_id)?.item_id,(line.direction==='IN'?1:-1)*Number(line.quantity||0));
+  }
+  for(const line of g.feed_adjustments||[])if(line.contract_assignment_id===assignment.id){
+    adjustment.set(line.item_id,(adjustment.get(line.item_id)||0)+Number(line.adjustment_units||0));
+  }
+  let remainingKg=0,remainingZak=0;
+  for(const [id,net] of balance){
+    const item=items.get(id);
+    if(!item||item.category!=='PAKAN'||item.active===false||net===0)continue;
+    const units=Math.max(0,net-(used.get(id)||0)+(adjustment.get(id)||0));
+    const kgPerUnit=number(item.kg_per_unit);
+    remainingKg=remainingKg===null||kgPerUnit===null||kgPerUnit<=0?null:remainingKg+units*kgPerUnit;
+    remainingZak=remainingZak===null||!isZak(item)?null:remainingZak+units;
+  }
+  return {daily,remainingKg,remainingZak};
+}
+
 function renderDashboardTemplate(cfg){
   const kpis=(cfg.kpis||[]).slice(0,4);
   const kpiHtml=kpis.map(x=>'<div class="card">'+esc(x.label||'')+'<strong>'+(x.value||'-')+'</strong><small>'+esc(x.small||'')+'</small></div>').join('');
@@ -170,10 +233,16 @@ async function buildDashboardModel(){
     const b=d.barns.find(v=>v.id===x.a.barn_id);
     const currentAge=x.currentAge;
     const trend=!x.latest?'':x.prevBwg?(x.bwg>x.prevBwg?'↑':x.bwg<x.prevBwg?'↓':'→'):'→';
+    const feedSummary=dashboardFeedSummary(g,x.a),lastFeed=feedSummary.daily[0];
+    const feedAmount=(kg,zak)=> (kg===null||kg===undefined?'-':prodFmt(kg,2)+' kg')+' / '+(zak===null||zak===undefined?'-':prodFmt(zak,2)+' zak');
+    const feedHtml='<div class="dashboard-feed-summary">'+
+      '<div><span>Sisa Pakan</span><strong>'+feedAmount(feedSummary.remainingKg,feedSummary.remainingZak)+'</strong><small>Stok kiriman setelah pemakaian recording dan retur</small></div>'+
+      '<div><span>Pakai Pakan / Hari</span><strong>'+feedAmount(lastFeed?.kg,lastFeed?.zak)+'</strong><small>'+(lastFeed?'Recording '+prodDateId(lastFeed.date):'Belum ada recording pakan')+'</small></div></div>'+
+      (feedSummary.daily.length?'<details class="dashboard-feed-history"><summary>Riwayat pemakaian harian · 7 tanggal terakhir</summary>'+feedSummary.daily.slice(0,7).map(day=>'<div><span>'+prodDateId(day.date)+'</span><strong>'+feedAmount(day.kg,day.zak)+'</strong></div>').join('')+'</details>':'');
     const isSim=String(x.latest?.notes||'').includes('SIMULASI DASHBOARD KPI'); const alert=isSim?'<span class="owner-sim">SIMULASI</span>':(x.alerts.length?'<span class="owner-alert">'+esc(x.alerts[0])+'</span>':'<span class="owner-ok">Normal</span>');
     return '<article class="owner-barn-card"><div class="owner-barn-head"><div><strong>'+esc(b?shortBarnLabel(b):'-')+'</strong><small>Umur saat ini <strong>'+(currentAge||0)+' hari</strong> · Recording masuk <strong>'+(x.latest?'umur '+x.recordingAge+' hari':'belum ada')+'</strong> · '+(x.latest?prodDateId(x.latest.recorded_on):'-')+'</small></div>'+alert+'</div>'+
       '<div class="owner-metrics"><div><span>Sisa Ayam Saat Ini</span><b>'+prodFmt(x.livePopulation,0)+'</b></div><div><span>BW</span><b>'+prodFmt(x.bw,3)+' kg '+trend+'</b></div><div><span>FCR</span><b>'+prodFmt(x.fcr,3)+'</b></div><div><span>IP</span><b>'+prodFmt(x.ip,1)+'</b></div></div>'+
-      '<div class="owner-card-foot"><strong>Populasi Awal '+prodFmt(x.initial,0)+' ekor</strong> · Terpanen sampai hari ini '+prodFmt(x.liveHarvested,0)+' ekor · Sisa Ayam '+prodFmt(x.livePopulation,0)+' ekor<br>Deplesi '+prodFmt(x.dep,2)+'% · <span class="'+(x.fcLow?'owner-fc-low':'owner-fc-ok')+'">FC '+prodFmt(x.fc,0)+' g/ekor'+(x.fcStd>0?' / Std '+prodFmt(x.fcStd,0):'')+'</span> · Pakan '+prodFmt(x.feed,0)+' Kg</div></article>';
+      feedHtml+'<div class="owner-card-foot"><strong>Populasi Awal '+prodFmt(x.initial,0)+' ekor</strong> · Terpanen sampai hari ini '+prodFmt(x.liveHarvested,0)+' ekor · Sisa Ayam '+prodFmt(x.livePopulation,0)+' ekor<br>Deplesi '+prodFmt(x.dep,2)+'% · <span class="'+(x.fcLow?'owner-fc-low':'owner-fc-ok')+'">FC '+prodFmt(x.fc,0)+' g/ekor'+(x.fcStd>0?' / Std '+prodFmt(x.fcStd,0):'')+'</span> · Pakan Kumulatif '+prodFmt(x.feed,0)+' Kg</div></article>';
   }).join('');
 
   const latestEst=active.map(a=>estimates.find(e=>e.contract_assignment_id===a.id)).filter(Boolean);

@@ -69,6 +69,35 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
   ]);
   await evaluate("document.querySelector('#auditEditActions').remove()");
   console.log('PASS: mobile save/cancel keep labels; edit and delete retain distinct icons');
+  const feedCard=await evaluate(`
+    const originalRpc=db.rpc,originalLeague=loadAbkLeagueSetting,originalProfile=profile;
+    try{
+      profile={role:'ADMIN'};
+      loadAbkLeagueSetting=async()=>({data:null});
+      db.rpc=async()=>({data:{feed_monitoring_version:1,
+        assignments:[{id:'A',barn_id:'B',active:true,cycle_type:'MITRA'}],
+        barns:[{id:'B',name:'Kandang Uji'}],chicks:[{contract_assignment_id:'A',received:1000,doa:0,arrived_on:'2026-10-01'}],
+        items:[{id:'F',category:'PAKAN',unit:'ZAK',kg_per_unit:50}],
+        shipments:[{id:'S',contract_assignment_id:'A'}],shipment_items:[{shipment_id:'S',item_id:'F',quantity:100}],
+        recordings:[{id:'R',contract_assignment_id:'A',recorded_on:'2026-11-01',age_days:31,feed_kg:150,feed_item_id:'F',feed_quantity_units:3}],
+        recording_feed_items:[{recording_id:'R',item_id:'F',quantity_units:3,kg_per_unit:50}]
+      }});
+      const model=await buildDashboardModel(),box=document.createElement('section');
+      box.id='auditFeedCard';box.innerHTML=model.mainHtml;document.body.appendChild(box);
+      box.querySelector('details').open=true;
+      return {text:box.textContent,overflow:box.scrollWidth>innerWidth};
+    }finally{db.rpc=originalRpc;loadAbkLeagueSetting=originalLeague;profile=originalProfile;}
+  `);
+  assert.match(feedCard.text,/Sisa Pakan/);
+  assert.match(feedCard.text,/4\.850,00 kg \/ 97,00 zak/);
+  assert.match(feedCard.text,/150,00 kg \/ 3,00 zak/);
+  assert.match(feedCard.text,/Riwayat pemakaian harian/);
+  assert.equal(feedCard.overflow,false);
+  await command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
+  assert.equal(await evaluate("document.querySelector('#auditFeedCard').scrollWidth<=innerWidth"),true);
+  await evaluate("document.querySelector('#auditFeedCard').remove()");
+  await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  console.log('PASS: feed card shows actual kg/zak, daily history and fits mobile/desktop widths');
   const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync(path.join(__dirname,'output/login-mobile.png'),Buffer.from(shot.data,'base64'));
   assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
   console.log('PASS: mobile login fits a 390px viewport');

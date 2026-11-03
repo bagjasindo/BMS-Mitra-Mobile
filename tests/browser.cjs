@@ -38,7 +38,7 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
   await until("document.querySelector('.login-logo')?.getAttribute('alt')==='Logo BMS'");
   assert.equal(await evaluate("(await caches.keys()).includes('another-app-cache')"),true);
   const shell=await evaluate("const keys=(await caches.keys()).filter(k=>k.startsWith('bms-pwa-shell-'));if(keys.length!==1)throw new Error('Expected exactly one active BMS cache, got '+keys.join(','));return (await (await caches.open(keys[0])).keys()).map(r=>new URL(r.url).pathname)");
-  for(const name of ['/main-2321.js','/bms-core.js','/bms-data-config.js','/vendor/supabase-2.57.0.js'])assert.ok(shell.includes(name),name+' was not cached');
+  for(const name of ['/main-2321.js','/bms-core.js','/bms-data-config.js','/vendor/supabase-2.57.0.js','/bms-typography.css'])assert.ok(shell.includes(name),name+' was not cached');
   console.log('PASS: login loads without errors, local dependencies cached, other app cache preserved');
 
   await evaluate("document.querySelector('#togglePassword').click()");assert.equal(await evaluate("document.querySelector('input[name=password]').type"),'text');
@@ -98,6 +98,25 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
   await evaluate("document.querySelector('#auditFeedCard').remove()");
   await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   console.log('PASS: feed card shows actual kg/zak, daily history and fits mobile/desktop widths');
+  await evaluate(`
+    const box=document.createElement('section');box.id='auditTypography';box.className='panel';
+    box.innerHTML='<header><h2>Judul Halaman</h2></header><h3>Judul Panel</h3><form><label>Nama Kandang<input placeholder="Cari kandang"></label><button type="button">Simpan Perubahan</button><div class="app-select-control"><input class="app-select-input"><div class="app-select-results open"><button type="button">Pilihan kandang</button></div></div></form><p class="muted">Catatan pendukung</p><div class="tablewrap"><table><thead><tr><th>Uraian</th><th>Jumlah</th></tr></thead><tbody><tr><td>Pakan</td><td>1.234,00 kg</td></tr></tbody></table></div><div class="owner-metrics"><div><span>Sisa Ayam</span><b>12.345</b></div></div><div class="owner-estimate-metrics"><div><span>Pakan</span><b>1.234 kg</b></div></div><div class="dashboard-feed-summary"><div><span>Sisa Pakan</span><strong>4.850,00 kg / 97,00 zak</strong><small>Recording terakhir</small></div></div><button type="button" class="mobile-icon-action">✏️</button>';
+    document.querySelector('#app').appendChild(box);
+  `);
+  for(const width of [390,768,1280]){
+    await command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<901});
+    const fonts=await evaluate(`
+      const box=document.querySelector('#auditTypography');
+      const selectors=['header h2','h3','label','input','form>button','.app-select-input','.app-select-results button','.muted','th','td','.owner-metrics span','.owner-metrics b','.owner-estimate-metrics span','.owner-estimate-metrics b','.dashboard-feed-summary span','.dashboard-feed-summary strong','.dashboard-feed-summary small','button.mobile-icon-action'];
+      return {sizes:selectors.map(s=>getComputedStyle(box.querySelector(s)).fontSize),overflow:box.scrollWidth>innerWidth,buttonHeight:box.querySelector('form>button').getBoundingClientRect().height};
+    `);
+    assert.deepEqual(fonts.sizes,[width<901?'20px':'24px','16px','14px','14px','14px','14px','14px','12px','13px','13px','12px','18px','12px','18px','12px','16px','12px','18px']);
+    assert.equal(fonts.overflow,false,'typography overflows at '+width+'px');
+    if(width<901)assert.ok(fonts.buttonHeight>=40);
+  }
+  await evaluate("document.querySelector('#auditTypography').remove()");
+  await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  console.log('PASS: unified computed font scale and readable forms/tables/dashboard at 390px, 768px and 1280px');
   const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync(path.join(__dirname,'output/login-mobile.png'),Buffer.from(shot.data,'base64'));
   assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
   console.log('PASS: mobile login fits a 390px viewport');

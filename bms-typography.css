@@ -1,0 +1,89 @@
+/* Shared screen typography. Loaded last so legacy page styles share one scale.
+   Print/export documents retain their own paper-specific typography. */
+@media screen {
+  :root {
+    --bms-font-note:12px;
+    --bms-font-table:13px;
+    --bms-font-body:14px;
+    --bms-font-section:16px;
+    --bms-font-metric:18px;
+    --bms-font-title:24px;
+  }
+  body,#app {
+    font-size:var(--bms-font-body)!important;
+    line-height:1.45!important;
+  }
+  #app :is(p,li,dt,dd,label,legend,input,select,textarea,button) {
+    font-size:var(--bms-font-body)!important;
+    line-height:1.45!important;
+  }
+  #app :is(input,select,textarea,button) {font-family:inherit!important}
+  #app :is(input,textarea)::placeholder {font-size:var(--bms-font-body)!important}
+  #app :is(.app-select-input,.app-select-results button,.mobile-select-search,.mobile-select-options button,.search-suggestion) {
+    font-size:var(--bms-font-body)!important;
+    line-height:1.45!important;
+  }
+  #app :is(nav button,nav summary,.mobile-topbar strong,.mobile-select-heading strong) {
+    font-size:var(--bms-font-body)!important;
+    line-height:1.4!important;
+  }
+  #app :is(h1,header h2,.ui-rhpp-title h2) {
+    font-size:var(--bms-font-title)!important;
+    line-height:1.25!important;
+  }
+  #app :is(h3,h4,.owner-hero h3,.ui-rhpp-card h3,.rhpp-detail-head h3) {
+    font-size:var(--bms-font-section)!important;
+    line-height:1.35!important;
+  }
+  #app :is(table,thead th,tbody td,tfoot td,tfoot th,table th,table td,caption) {
+    font-size:var(--bms-font-table)!important;
+    line-height:1.4!important;
+  }
+  #app :is(small,.muted,footer,.pill,.finance-status,.owner-eyebrow,.owner-live,
+    .owner-alert,.owner-ok,.owner-sim,.owner-card-foot,.owner-card-foot strong,
+    .owner-barn-head small,.owner-barn-head small strong,.owner-alert-row small,
+    .owner-estimate-head small,.owner-estimate-head>span,.owner-metrics span,
+    .owner-estimate-metrics span,.owner-estimate-metrics small,.owner-league-mobile small,
+    .owner-mobile-card-head span,.owner-mobile-metrics span,.owner-league-stats span,
+    .rhpp-count,.rhpp-summary-card span,.rhpp-feed-kind,.owner-alert-row>span,
+    .estimate-history-head p,.estimate-history-grid span,.estimate-history-subtitle,
+    .estimate-history-size,.estimate-history-notes span,.estimate-history-notes p,
+    .estimate-economy-grid span,.dashboard-feed-summary span,.dashboard-feed-summary small,
+    .dashboard-feed-history,.dashboard-feed-history span,.dashboard-feed-history strong,
+    .search-suggestion small,.search-empty,.app-select-empty,.mobile-topbar>span) {
+    font-size:var(--bms-font-note)!important;
+    line-height:1.45!important;
+  }
+  #app :is(.owner-barn-head>div>strong,.owner-estimate-head>div>strong,
+    .estimate-history-head h4,.estimate-history-total strong,.estimate-economy-total strong,
+    .owner-alert-row strong,.owner-empty-ok,.fx-trip-text strong,.fx-bop-trip strong,
+    .rhpp-mini-block h4,.rhpp-mini-row,.ui-rhpp-kpi span,.ui-rhpp-kpi small,
+    .owner-mobile-metrics b,.owner-league-stats b,.fx-trip-text small,.fx-bop-trip small) {
+    font-size:var(--bms-font-body)!important;
+    line-height:1.45!important;
+  }
+  #app :is(.card strong,.owner-metrics b,.owner-estimate-metrics b,
+    .estimate-history-grid strong,.estimate-economy-grid strong,.ui-rhpp-kpi strong,
+    .dashboard-feed-summary strong) {
+    font-size:var(--bms-font-metric)!important;
+    line-height:1.35!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere;
+    text-overflow:clip!important;
+  }
+  #app :is(.owner-metrics span,.owner-estimate-metrics span) {overflow-wrap:anywhere}
+  #app .dashboard-feed-summary strong {font-size:var(--bms-font-section)!important}
+  #app .dashboard-feed-history>div {align-items:baseline}
+  #app :is(button.mobile-icon-action,.mobile-menu-toggle,.mobile-select-close) {
+    font-size:18px!important;
+    line-height:1!important;
+  }
+  #app .login-password button {font-size:var(--bms-font-body)!important}
+  #app .login-shell #loginSubmit {font-size:var(--bms-font-body)!important}
+  #app :is(.app-confirm h3,.mobile-drawer-head strong) {font-size:var(--bms-font-section)!important}
+}
+@media screen and (max-width:900px) {
+  #app :is(header h2,.ui-rhpp-title h2) {font-size:20px!important}
+  #app :is(button,input,select,.app-select-input) {min-height:40px!important}
+  #app :is(button.mobile-icon-action,.mobile-menu-toggle,.mobile-select-close) {min-height:38px!important}
+}

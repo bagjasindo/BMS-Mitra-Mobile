@@ -83,7 +83,7 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
         recording_feed_items:[{recording_id:'R',item_id:'F',quantity_units:3,kg_per_unit:50}]
       }});
       const model=await buildDashboardModel(),box=document.createElement('section');
-      box.id='auditFeedCard';box.innerHTML=model.mainHtml;document.body.appendChild(box);
+      box.id='auditFeedCard';box.innerHTML=model.mainHtml;document.querySelector('#app').appendChild(box);
       box.querySelector('details').open=true;
       return {text:box.textContent,overflow:box.scrollWidth>innerWidth};
     }finally{db.rpc=originalRpc;loadAbkLeagueSetting=originalLeague;profile=originalProfile;}
@@ -93,6 +93,21 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
   assert.match(feedCard.text,/150,00 kg \/ 3,00 zak/);
   assert.match(feedCard.text,/Riwayat pemakaian harian/);
   assert.equal(feedCard.overflow,false);
+  const barnHeader=await evaluate(`
+    const head=document.querySelector('#auditFeedCard .owner-barn-head');
+    const alert=head.querySelector('.owner-alert');
+    const meta=head.querySelector('small');
+    return {emphasis:getComputedStyle(meta.querySelector('strong')).display,
+      direction:getComputedStyle(head).flexDirection,
+      alertWrap:getComputedStyle(alert).whiteSpace,
+      alertFits:alert.scrollWidth<=alert.clientWidth+1,
+      alertBelow:alert.getBoundingClientRect().top>=meta.getBoundingClientRect().bottom};
+  `);
+  assert.equal(barnHeader.emphasis,'inline');
+  assert.equal(barnHeader.direction,'column');
+  assert.equal(barnHeader.alertWrap,'normal');
+  assert.equal(barnHeader.alertFits,true);
+  assert.equal(barnHeader.alertBelow,true);
   await command('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
   assert.equal(await evaluate("document.querySelector('#auditFeedCard').scrollWidth<=innerWidth"),true);
   await evaluate("document.querySelector('#auditFeedCard').remove()");

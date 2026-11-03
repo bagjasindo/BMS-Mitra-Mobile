@@ -1,11 +1,11 @@
 const CACHE_PREFIX='bms-pwa-shell-';
-const CACHE_NAME=CACHE_PREFIX+'v2392-unified-fonts';
+const CACHE_NAME=CACHE_PREFIX+'v2393-barn-header';
 const SHELL=[
   './',
   './index.html',
   './style.css?v=2391-dashboard-feed',
   './mobile-form-responsive.css?v=2386-classic-restored',
-  './bms-typography.css?v=2392-unified-fonts',
+  './bms-typography.css?v=2393-barn-header',
   './vendor/supabase-2.57.0.js',
   './bms-data-config.js?v=2386-classic-restored',
   './bms-core.js?v=2390-mobile-edit-labels',

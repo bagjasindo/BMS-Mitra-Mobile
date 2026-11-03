@@ -74,6 +74,8 @@
   #app :is(.owner-metrics span,.owner-estimate-metrics span) {overflow-wrap:anywhere}
   #app .dashboard-feed-summary strong {font-size:var(--bms-font-section)!important}
   #app .dashboard-feed-history>div {align-items:baseline}
+  /* The legacy barn-name rule also matched emphasis inside metadata. */
+  #app .owner-barn-head small strong {display:inline!important}
   #app :is(button.mobile-icon-action,.mobile-menu-toggle,.mobile-select-close) {
     font-size:18px!important;
     line-height:1!important;
@@ -83,6 +85,16 @@
   #app :is(.app-confirm h3,.mobile-drawer-head strong) {font-size:var(--bms-font-section)!important}
 }
 @media screen and (max-width:900px) {
+  #app .owner-barn-head {flex-direction:column;align-items:stretch;gap:8px}
+  #app .owner-barn-head>div {width:100%;min-width:0}
+  #app .owner-barn-head :is(.owner-alert,.owner-ok,.owner-sim) {
+    align-self:flex-start;
+    max-width:100%!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    overflow-wrap:anywhere;
+  }
   #app :is(header h2,.ui-rhpp-title h2) {font-size:20px!important}
   #app :is(button,input,select,.app-select-input) {min-height:40px!important}
   #app :is(button.mobile-icon-action,.mobile-menu-toggle,.mobile-select-close) {min-height:38px!important}

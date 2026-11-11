@@ -132,6 +132,46 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
   await evaluate("document.querySelector('#auditTypography').remove()");
   await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   console.log('PASS: unified computed font scale and readable forms/tables/dashboard at 390px, 768px and 1280px');
+  await evaluate(`
+    window.__workSmoke={rpc:db.rpc,profile,tab,calls:0};
+    profile={role:'ADMIN',full_name:'Uji Administrator'};tab='admin_kinerja';
+    db.rpc=async(name,params)=>{
+      if(name!=='admin_work_performance_v1')throw new Error('Unexpected RPC: '+name);
+      window.__workSmoke.calls++;
+      return {data:{from:params.p_from,to:params.p_to,users:[{id:'P',name:'Petugas PPL',role:'PPL',active:true},{id:'K',name:'Petugas Keuangan',role:'KEUANGAN',active:true}],stats:[
+        {actor:'P',category:'PPL',input_date:'2026-11-01',new_count:2,on_time:1,late:1,delay_days:2},
+        {actor:'K',category:'KEUANGAN',input_date:'2026-11-02',new_count:1,on_time:1}
+      ],coverage:[],recording_coverage:[{actor:'P',barn:'Kandang A',expected_days:2,recorded_days:1}]}};
+    };
+    await adminWorkPerformancePage({from:'2026-11-01',to:'2026-11-03',actor:'',role:'',category:''});
+  `);
+  assert.equal(await evaluate("document.querySelectorAll('nav [data-tab=admin_kinerja]').length"),1);
+  assert.equal(await evaluate("document.querySelectorAll('#workPerformanceUsers tbody tr').length"),2);
+  assert.equal(await evaluate("!!document.querySelector('#workPerformanceReport svg[role=img]')"),true);
+  assert.match(await evaluate("document.querySelector('#workPerformanceReport').textContent"),/66,7%/);
+  for(const width of [390,768,1280]){
+    await command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<901});
+    assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true,'performance page overflows at '+width);
+  }
+  await evaluate("const f=document.querySelector('#workPerformanceFilter');f.elements.role.value='PPL';f.elements.category.value='PPL';f.requestSubmit()");
+  await until("document.querySelectorAll('#workPerformanceUsers tbody tr').length===1");
+  assert.match(await evaluate("document.querySelector('#workPerformanceReport').textContent"),/50%/);
+  assert.equal(await evaluate("document.querySelector('#workPerformanceFilter button[type=submit]').disabled"),false);
+  await evaluate("db.rpc=async()=>({error:{message:'Koneksi uji terputus'}});await adminWorkPerformancePage()");
+  assert.match(await evaluate("document.querySelector('#workPerformanceError').textContent"),/Koneksi uji terputus/);
+  await evaluate(`
+    for(const role of ['OWNER','PPL','LOGISTIK','MARKETING','KEUANGAN']){
+      profile={role,full_name:'Uji'};
+      if(canViewTab('admin_kinerja'))throw new Error('Performance nav allowed to '+role);
+      db.rpc=async()=>{throw new Error('Unauthorized RPC called')};
+      await adminWorkPerformancePage();
+      if(!document.body.textContent.includes('khusus Administrator'))throw new Error('Missing access guard');
+    }
+    db.rpc=window.__workSmoke.rpc;profile=window.__workSmoke.profile;tab=window.__workSmoke.tab;
+    bmsWorkPerformanceState=null;delete window.__workSmoke;login();
+  `);
+  await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  console.log('PASS: Admin work performance charts, role/category filters, recording completeness, error handling and non-admin guards');
   const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync(path.join(__dirname,'output/login-mobile.png'),Buffer.from(shot.data,'base64'));
   assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
   console.log('PASS: mobile login fits a 390px viewport');

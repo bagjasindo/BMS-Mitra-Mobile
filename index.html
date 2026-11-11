@@ -1,5 +1,5 @@
 <!doctype html><html lang="id"><head><meta charset="utf-8"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BMS Mobile</title><link rel="icon" type="image/x-icon" href="./assets/bms_favicon.ico?v=2386-classic-restored"><link rel="icon" type="image/png" sizes="32x32" href="./assets/bms_favicon_32.png?v=2386-classic-restored"><link rel="icon" type="image/png" sizes="192x192" href="./assets/bms_app_icon_192.png?v=6-original-20261001"><meta name="theme-color" content="#000000"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="BMS Mobile"><meta name="apple-touch-fullscreen" content="yes"><link rel="apple-touch-icon" sizes="180x180" href="./assets/bms_app_icon_180.png?v=6-original-20261001"><link rel="manifest" href="./manifest.webmanifest?v=6-original-20261001"><link rel="preconnect" href="https://mqqrfhwqgcpkjeaasdsr.supabase.co" crossorigin><link rel="stylesheet" href="./style.css?v=2391-dashboard-feed"><link rel="stylesheet" href="./mobile-form-responsive.css?v=2386-classic-restored"><link rel="stylesheet" href="./bms-typography.css?v=2393-barn-header"></head>
+<title>BMS Mobile</title><link rel="icon" type="image/x-icon" href="./assets/bms_favicon.ico?v=2386-classic-restored"><link rel="icon" type="image/png" sizes="32x32" href="./assets/bms_favicon_32.png?v=2386-classic-restored"><link rel="icon" type="image/png" sizes="192x192" href="./assets/bms_app_icon_192.png?v=6-original-20261001"><meta name="theme-color" content="#000000"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="BMS Mobile"><meta name="apple-touch-fullscreen" content="yes"><link rel="apple-touch-icon" sizes="180x180" href="./assets/bms_app_icon_180.png?v=6-original-20261001"><link rel="manifest" href="./manifest.webmanifest?v=6-original-20261001"><link rel="preconnect" href="https://mqqrfhwqgcpkjeaasdsr.supabase.co" crossorigin><link rel="stylesheet" href="./style.css?v=2391-dashboard-feed"><link rel="stylesheet" href="./mobile-form-responsive.css?v=2386-classic-restored"><link rel="stylesheet" href="./bms-typography.css?v=2393-barn-header"><link rel="stylesheet" href="./bms-performance.css?v=2394-admin-performance"></head>
 <body><div id="app"><main class="login"><h1>BMS Mitra Online</h1><p>Memuat aplikasi…</p></main></div>
 <script>
 (function(){
@@ -50,12 +50,13 @@
       await loadScript('./bms-data-config.js?v=2386-classic-restored',30000);
       await loadScript('./bms-core.js?v=2390-mobile-edit-labels',30000);
       if(!window.supabase?.createClient)throw new Error('Supabase tidak tersedia');
-      await loadScript('./main-2321.js?v=2390-mobile-edit-labels',30000);
+      await loadScript('./main-2321.js?v=2394-admin-performance',30000);
       await loadScript('./modules/bms-master-logistics.js?v=2386-classic-restored',30000);
       await loadScript('./modules/bms-production.js?v=2390-mobile-edit-labels',30000);
       await loadScript('./modules/bms-finance.js?v=2387-expedition-date-order',30000);
       await loadScript('./modules/bms-inventory.js?v=2389-master-search',30000);
-      await loadScript('./modules/bms-admin.js?v=2388-barn-inventory',30000);
+      await loadScript('./modules/bms-performance.js?v=2394-admin-performance',30000);
+      await loadScript('./modules/bms-admin.js?v=2394-admin-performance',30000);
       await loadScript('./modules/bms-rhpp-users.js?v=2386-classic-restored',30000);
       await loadScript('./modules/bms-dashboard-reports.js?v=2391-dashboard-feed',30000);
       await loadScript('./bms-start.js?v=2386-classic-restored',30000);
@@ -75,7 +76,7 @@ if('serviceWorker' in navigator){
     location.reload();
   });
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js?v=2393-barn-header',{scope:'./'}).then(reg=>{
+    navigator.serviceWorker.register('./sw.js?v=2394-admin-performance',{scope:'./'}).then(reg=>{
       reg.update().catch(()=>{});
       if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});
       reg.addEventListener('updatefound',()=>{

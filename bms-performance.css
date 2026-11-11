@@ -1,0 +1,13 @@
+.work-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.work-kpis>div{padding:12px;background:#f0f9fa;border:1px solid #d5e9ec;border-radius:10px;min-width:0}
+.work-kpis span,.work-kpis small{display:block;color:#536a77}
+.work-kpis strong{display:block;font-size:18px;overflow-wrap:anywhere;margin:5px 0}
+.work-bars{display:grid;gap:12px}
+.work-bar-row{display:grid;grid-template-columns:minmax(100px,1fr) minmax(60px,3fr) minmax(35px,auto);gap:10px;align-items:center}
+.work-bar-row>span{overflow-wrap:anywhere}
+.work-bar-track{background:#e4edf1;height:16px;border-radius:5px;overflow:hidden}
+.work-bar-track>div{background:#087f8c;height:100%;min-width:0}
+.work-chart svg{display:block;width:100%;min-width:600px;height:auto;max-height:300px}
+.work-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px}
+#workPerformanceReport table{width:100%}
+@media(max-width:700px){.work-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.work-bar-row{grid-template-columns:minmax(85px,1fr) minmax(45px,2fr) minmax(30px,auto);gap:6px}}

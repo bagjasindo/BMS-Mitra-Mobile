@@ -1,20 +1,22 @@
 const CACHE_PREFIX='bms-pwa-shell-';
-const CACHE_NAME=CACHE_PREFIX+'v2393-barn-header';
+const CACHE_NAME=CACHE_PREFIX+'v2394-admin-performance';
 const SHELL=[
   './',
   './index.html',
   './style.css?v=2391-dashboard-feed',
   './mobile-form-responsive.css?v=2386-classic-restored',
   './bms-typography.css?v=2393-barn-header',
+  './bms-performance.css?v=2394-admin-performance',
   './vendor/supabase-2.57.0.js',
   './bms-data-config.js?v=2386-classic-restored',
   './bms-core.js?v=2390-mobile-edit-labels',
-  './main-2321.js?v=2390-mobile-edit-labels',
+  './main-2321.js?v=2394-admin-performance',
   './modules/bms-master-logistics.js?v=2386-classic-restored',
   './modules/bms-production.js?v=2390-mobile-edit-labels',
   './modules/bms-finance.js?v=2387-expedition-date-order',
   './modules/bms-inventory.js?v=2389-master-search',
-  './modules/bms-admin.js?v=2388-barn-inventory',
+  './modules/bms-performance.js?v=2394-admin-performance',
+  './modules/bms-admin.js?v=2394-admin-performance',
   './modules/bms-rhpp-users.js?v=2386-classic-restored',
   './modules/bms-dashboard-reports.js?v=2391-dashboard-feed',
   './bms-start.js?v=2386-classic-restored',

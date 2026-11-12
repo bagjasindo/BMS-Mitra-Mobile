@@ -75,7 +75,7 @@ function rhppOnePageHtml(source,company={}){
   const performance=rows(panel('Ringkasan Produksi')||panel('Kinerja Produksi')).filter(r=>/Total Performa RHPP \(Ekor\)|Total Performa RHPP \(Kg\)|Bobot Rata-rata|Umur Panen/.test(r[0]));
   const metrics=rows(panel('Kinerja Produksi')).filter(r=>/Deplesi hitung|^FCR$|FCR Standar|Selisih FCR|Indeks Prestasi|Pakan Kontrak Bersih/.test(r[0]));
   const calcRows=rows(panel('Rincian Perhitungan Kontrak'));
-  const contract=calcRows.filter(r=>/^(A\.|B\.|C\.|D\.|E\.|F\.|G\.)/.test(r[0])).map(r=>[r[0],r.at(-1)]);
+  const contract=calcRows.filter(r=>/^(A\.|B\.|C\.|D\.|E\.|F\.|G\.)/.test(r[0])||r[0]==='Hasil kontrak per DOC masuk').map(r=>[r[0]==='Hasil kontrak per DOC masuk'?'Pendapatan per Ekor Chick-In':r[0],r.at(-1)]);
   const extras=rows(panel('Penyesuaian Biaya Perusahaan')).filter(r=>/Kurang|Total Biaya Tambahan|HASIL AKHIR/.test(r[0]));
   const companyName=company.legal_name||company.company_name||'Nama perusahaan belum diisi';
   const barn=text(identity.find(r=>r[0]==='Kandang / Peternak')?.[1]||null)||'-';

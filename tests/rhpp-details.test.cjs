@@ -28,7 +28,7 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
     chick_ins:[{contract_assignment_id:'a',received:8100,doa:2,arrived_on:'2026-10-02'}],
     company_profile:{company_name:'BMS'},
   };
-  const summary={contract_assignment_id:'a',active:true,barn_code:'KD-004',barn_name:'Randegan',chick_in_birds:8100,main_doc_cost:72900000,total_harvest_birds:6800,total_harvest_kg:12001.1,net_feed_kg:18200,sapronak_cost:100000000,farmer_profit:1234567,external_sapronak_cost:20000};
+  const summary={contract_assignment_id:'a',active:true,barn_code:'KD-004',barn_name:'Randegan',chick_in_birds:8100,main_doc_cost:72900000,total_harvest_birds:6800,total_harvest_kg:12001.1,net_feed_kg:18200,sapronak_cost:100000000,farmer_profit:1234567,profit_per_chick_in:152.42,external_sapronak_cost:20000};
   w.db={rpc:async()=>({data:[summary]}),from(name){const q={select(){return q},order(){return q},eq(){return q},maybeSingle(){return q},then(resolve){return Promise.resolve({data:tables[name]||[]}).then(resolve)}};return q}};
   w.__financeRhppState={assignment:'a'};
   let printed,pdf,excel;
@@ -70,6 +70,8 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
     assert.ok(doc.body.textContent.includes('Hasil Tangkap'));
     assert.ok(doc.body.textContent.includes('Hasil Produksi'));
     assert.ok(doc.body.textContent.includes('Hasil Perhitungan Kontrak'));
+    assert.ok(doc.body.textContent.includes('Pendapatan per Ekor Chick-In'));
+    assert.ok(doc.body.textContent.includes('Rp 152,42'));
     assert.ok(doc.body.textContent.includes('DOA (catatan)'));
     assert.ok(doc.body.textContent.includes('HASIL AKHIR SETELAH BIAYA TAMBAHAN'));
     assert.equal(doc.querySelector('select,button,[data-rhpp-controls]'),null);

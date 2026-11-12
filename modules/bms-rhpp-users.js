@@ -320,7 +320,7 @@ async function financeRhppPage(options={}){
   }
 
   html+='<section data-rhpp-controls class="panel rhpp-panel"><div class="report-actions"><button type="button" id="rhppPrint">Cetak</button><button type="button" id="rhppPdf">PDF</button><button type="button" id="rhppExcel">Excel</button></div></section>';
-  if(options.historyAssignment)html+='<section data-rhpp-controls class="panel"><button type="button" id="rhppHistoryBack">Kembali Pilih Siklus</button><p>Angka ringkasan memakai snapshot CLOSED. Rincian transaksi asal ditampilkan untuk audit.</p></section>';
+  if(options.historyAssignment)html+='<section data-rhpp-controls class="panel"><button type="button" id="rhppHistoryBack">Kembali Pilih Siklus</button><p>Angka ringkasan memakai catatan final saat periode ditutup. Rincian transaksi asal ditampilkan untuk audit.</p></section>';
   const selectedRows=activeRows.filter(x=>x.contract_assignment_id===selectedAssignment);
   selectedRows.forEach(x=>{
     const fin=finals.find(r=>r.contract_assignment_id===x.contract_assignment_id);
@@ -401,8 +401,8 @@ async function financeRhppPage(options={}){
       '<div class="tablewrap"><table><tbody>'+
         '<tr><td>Kontrak</td><td>'+esc(x.contract_number||'-')+'</td></tr>'+
         '<tr><td>DOC Diterima</td><td>'+prodFmt(ci?.received,0)+' ekor</td></tr>'+
-        '<tr><td>DOA (catatan)</td><td>'+prodFmt(ci?.doa,0)+' ekor · '+(fin?'populasi historis mengikuti snapshot CLOSED':'tidak mengurangi populasi dan nilai DOC RHPP')+'</td></tr>'+
-        '<tr><td>'+ (fin?'Populasi Dasar RHPP (snapshot CLOSED)':'Populasi Dasar RHPP (DOC Diterima)') +'</td><td><strong>'+prodFmt(x.chick_in_birds,0)+' ekor</strong></td></tr>'+
+        '<tr><td>DOA (catatan)</td><td>'+prodFmt(ci?.doa,0)+' ekor · '+(fin?'populasi historis mengikuti catatan final saat ditutup':'tidak mengurangi populasi dan nilai DOC RHPP')+'</td></tr>'+
+        '<tr><td>'+ (fin?'Populasi Dasar RHPP (final saat ditutup)':'Populasi Dasar RHPP (DOC Diterima)') +'</td><td><strong>'+prodFmt(x.chick_in_birds,0)+' ekor</strong></td></tr>'+
         '<tr><td>Harga DOC / Ekor</td><td>Rp '+(effectiveDocPrice===null?'-':prodFmt(effectiveDocPrice,2))+'</td></tr>'+
         '<tr><td>Total Nilai DOC</td><td><strong>Rp '+prodFmt(x.main_doc_cost,0)+'</strong></td></tr>'+
       '</tbody></table></div>'+

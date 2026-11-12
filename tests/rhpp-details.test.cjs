@@ -67,7 +67,7 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   tables.rhpp_system_final=[{...summary,system_amount:777777,external_meat_cost:0,external_sapronak_cost:20000,chick_in_birds:8098,bonus_depletion:0,bonus_depletion_rate:0}];
   summary.active=false;
   await w.financeRhppPage({historyAssignment:'a',onBack:()=>{}});
-  assert.match(w.document.querySelector('#rhppExportArea').textContent,/snapshot CLOSED/);
+  assert.match(w.document.querySelector('#rhppExportArea').textContent,/final saat ditutup/);
   const finalRow=[...w.document.querySelectorAll('tr')].find(r=>r.textContent.includes('HASIL AKHIR SETELAH BIAYA TAMBAHAN'));
   assert.match(finalRow.textContent,/777\.777/);
   assert.deepEqual([...w.document.querySelectorAll('[data-rhpp-report-group]')].map(g=>g.dataset.rhppReportGroup),['supplies','harvest','returns','production','calculation']);

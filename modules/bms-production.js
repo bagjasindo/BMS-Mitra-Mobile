@@ -2778,6 +2778,9 @@ async function adminRhppHistoryPage(){
 
   const missingFinal=selectedAssignment&&!finals.some(f=>f.contract_assignment_id===selectedAssignment);
   if(missingFinal){selectedAssignment='';window.__adminRhppHistoryState.assignment='';}
+  // MITRA history uses the same RHPP renderer/export as Cek RHPP, with frozen final values.
+  const selectedCycle=d.assignments.find(a=>a.id===selectedAssignment);
+  if(selectedAssignment&&selectedCycle?.cycle_type!=='MANDIRI')return financeRhppPage({historyAssignment:selectedAssignment,onBack:async()=>{window.__adminRhppHistoryState.assignment='';await adminRhppHistoryPage();}});
   let html=RHPP_SCREEN_STYLE+'<div class="rhpp-ui"><section class="panel"><h3>'+(historyOnly?'Riwayat RHPP':'Lihat RHPP')+'</h3><p class="muted">'+(historyOnly?'Pilih kandang dan siklus CLOSED. Riwayat memakai snapshot final MITRA maupun MANDIRI saat produksi ditutup dan hanya untuk dilihat/cetak.':'Pilih kandang, lalu pilih siklus. Data CLOSED ditampilkan sebagai ringkasan RHPP Sistem.')+'</p>'+
     '<form id="pplRhppViewForm" class="form-vertical">'+
       '<label>Kandang<select id="pplRhppBarn" required><option value="">Pilih Kandang</option>'+

@@ -195,6 +195,29 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
   await evaluate("db.from=window.__expSmoke.from;profile=window.__expSmoke.profile;tab=window.__expSmoke.tab;delete window.__expSmoke;login()");
   await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   console.log('PASS: Logistics expedition report navigation, filters, distinct units, export bindings and restricted finance access');
+  await evaluate(`
+    window.__rhppSmoke={from:db.from,rpc:db.rpc,profile,tab};profile={role:'ADMIN',full_name:'Uji RHPP'};tab='keuangan_rhpp';
+    const tables={items:[{id:'d',name:'Bounty',category:'DOC',unit:'ekor'},{id:'v',name:'Vitamin Uji',category:'OVK',unit:'botol'}],logistics_shipments:[{id:'s',contract_assignment_id:'a',shipment_date:'2026-10-02',delivery_number:'DO-001'}],logistics_shipment_items:[{shipment_id:'s',item_id:'d',quantity:8100,unit_price:9000}],logistics_returns:[{id:'r',contract_assignment_id:'a',return_date:'2026-11-01',reference:'RT-001'}],logistics_return_items:[{return_id:'r',item_id:'v',quantity:2,unit_price:10000}],chick_ins:[{contract_assignment_id:'a',received:8100,doa:2}],company_profile:{company_name:'BMS'}};
+    db.from=name=>{const q={select:()=>q,order:()=>q,eq:()=>q,maybeSingle:()=>q,then:resolve=>Promise.resolve({data:tables[name]||[]}).then(resolve)};return q};
+    db.rpc=async()=>({data:[{contract_assignment_id:'a',active:true,barn_code:'KD-004',barn_name:'Randegan',chick_in_birds:8100,main_doc_cost:72900000,total_harvest_birds:6800,total_harvest_kg:12001.1,net_feed_kg:18200,sapronak_cost:100000000,farmer_profit:1234567}]});
+    window.__financeRhppState={assignment:'a'};await financeRhppPage();
+  `);
+  assert.match(await evaluate("document.querySelector('#rhppExportArea').textContent"),/RT-001.*Vitamin Uji.*botol.*20.000/);
+  assert.match(await evaluate("document.querySelector('#rhppExportArea').textContent"),/DOA \(catatan\)/);
+  assert.equal(await evaluate("typeof document.querySelector('#rhppPrint').onclick"),'function');
+  for(const width of [390,768,1280]){
+    await command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<901});
+    assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true,'RHPP page overflows at '+width);
+  }
+  await evaluate(`
+    const area=document.querySelector('#rhppExportArea'),doc=new DOMParser().parseFromString(rhppDocumentHtml(area,{company_name:'BMS'}),'text/html');
+    const cells=node=>[...node.querySelectorAll('th,td')].map(n=>n.textContent);
+    if(JSON.stringify(cells(area))!==JSON.stringify(cells(doc)))throw new Error('RHPP print differs from screen');
+    if(doc.querySelector('button,select'))throw new Error('RHPP controls leaked into print');
+    db.from=window.__rhppSmoke.from;db.rpc=window.__rhppSmoke.rpc;profile=window.__rhppSmoke.profile;tab=window.__rhppSmoke.tab;delete window.__rhppSmoke;login();
+  `);
+  console.log('PASS: RHPP shipment/return details, DOA note, shared export values and mobile/tablet/desktop layout');
+  await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync(path.join(__dirname,'output/login-mobile.png'),Buffer.from(shot.data,'base64'));
   assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
   console.log('PASS: mobile login fits a 390px viewport');

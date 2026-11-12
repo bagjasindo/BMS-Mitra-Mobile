@@ -46,6 +46,6 @@ test('LOCK-005 and LOCK-006 official print does not contain known fake hardcoded
 test('LOCK-007 to LOCK-009 RHPP keeps company additions outside contract RHPP',()=>{
   assert.match(rhpp,/Penyesuaian Biaya Perusahaan/);
   assert.match(rhpp,/Tambah Daging/);
-  assert.match(rhpp,/Tambah Sapronak\/Pakan/);
+  assert.match(rhpp,/Tambah Sapronak\s*\/\s*Pakan/);
   assert.match(rhpp,/Nilai RHPP Kontrak/);
 });

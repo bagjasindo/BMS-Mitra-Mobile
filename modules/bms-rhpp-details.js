@@ -33,6 +33,27 @@ function rhppLogisticsDetails(assignment,data){
   const refunds=[['PAKAN','Retur Pakan'],['DOC','Retur DOC'],['OVK','Retur OVK'],['LAINNYA','Retur Sapronak Lainnya']].map(([category,label])=>section(label+' · Kontrak',returns,returnItems,'return_id','unit_price',false,true,category)+section(label+' · Tambahan Perusahaan',extReturns,extReturnItems,'external_return_id','purchase_unit_price',true,true,category)).join('');
   return shipments+refunds+heldHtml;
 }
+function rhppContractCalculation(x){
+  const known=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
+  const n=(v,d=2)=>known(v)?prodFmt(v,d):'-';
+  const rp=v=>known(v)?'Rp '+n(v):'-';
+  const row=(label,formula,value)=>'<tr><td>'+label+'</td><td>'+formula+'</td><td class="num">'+rp(value)+'</td></tr>';
+  const bonus=(name,metric,rate,value)=>row(name,metric+' · '+n(x.total_harvest_kg)+' kg × '+rp(rate)+'/kg',value);
+  return '<section data-rhpp-group="calculation" class="panel rhpp-panel rhpp-wide rhpp-contract-calculation"><h3>Rincian Perhitungan Kontrak</h3><p>Kontrak: <strong>'+esc(x.contract_number||'-')+'</strong>. Harga setiap barang tercantum pada rincian kiriman. Nilai dan tarif yang ditampilkan di sini adalah yang dipakai dalam RHPP; untuk periode CLOSED, ringkasan mengikuti catatan final saat ditutup.</p><div class="tablewrap"><table><thead><tr><th>Tahap Perhitungan</th><th>Dasar / Cara Menghitung</th><th>Nilai RHPP</th></tr></thead><tbody>'+
+    row('A. Nilai produksi menurut kontrak','Nilai panen ayam + nilai tambah daging untuk performa RHPP, sesuai perhitungan kontrak',x.harvest_value)+
+    row('Biaya DOC','Jumlahkan jumlah DOC × harga satuan pada setiap kiriman DOC',x.main_doc_cost)+
+    row('Biaya pakan','Jumlahkan jumlah pakan × harga satuan pada setiap kiriman pakan',x.main_feed_cost)+
+    row('Biaya OVK','Jumlahkan jumlah OVK × harga satuan pada setiap kiriman OVK',x.main_ovk_cost)+
+    row('Biaya sapronak lainnya','Jumlahkan nilai barang kontrak selain DOC, pakan, dan OVK',x.main_other_cost)+
+    row('Pengurang biaya: retur kontrak','Kurangi biaya dengan nilai retur yang diterima sesuai transaksi: '+rp(x.main_return_cost),x.main_return_cost)+
+    row('B. Biaya sapronak bersih','DOC + pakan + OVK + sapronak lainnya − retur kontrak',x.sapronak_cost)+
+    row('C. Laba dasar kontrak','A − total biaya RHPP kontrak = '+rp(x.harvest_value)+' − '+rp(x.total_rhpp_cost),x.base_profit)+
+    bonus('D. Bonus IP','IP aktual '+n(x.ip),x.bonus_ip_rate,x.bonus_ip)+
+    bonus('E. Bonus efisiensi pakan (FC)','Selisih FCR '+n(x.diff_fcr,3),x.bonus_fc_rate,x.bonus_fc)+
+    bonus('F. Bonus deplesi','Deplesi hitung '+n(x.mortality_pct)+'%',x.bonus_mortality_rate,x.bonus_mortality)+
+    row('G. Hasil RHPP kontrak','C + D + E + F = '+rp(x.base_profit)+' + '+rp(x.bonus_ip)+' + '+rp(x.bonus_fc)+' + '+rp(x.bonus_mortality),x.farmer_profit)+
+    '</tbody></table></div><p class="muted">Bonus menggunakan total berat performa RHPP: panen aktual + tambah daging. Tarif Rp 0 berarti bonus tersebut tidak diberlakukan pada perhitungan ini; tanda - berarti tarif atau nilai tidak tercatat. Biaya pembelian tambah daging dan sapronak tambahan perusahaan dikurangkan setelah hasil kontrak (G), pada bagian Penyesuaian Biaya Perusahaan.</p></section>';
+}
 function rhppOrganizeReport(source){
   if(!source||source.dataset.rhppOrganized)return;
   source.dataset.rhppOrganized='1';

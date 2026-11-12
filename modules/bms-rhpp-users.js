@@ -448,6 +448,8 @@ async function financeRhppPage(options={}){
       '<tr class="rhpp-total-row"><th>TOTAL TAMBAH SAPRONAK · DI LUAR RHPP</th><th></th><th></th><th></th><th class="num">'+prodFmt(x.external_feed_kg,2)+'</th><th class="num">Rp '+prodFmt(extraFeedNetValue,0)+'</th></tr>'+
       '</tbody></table></div></section>':'');
 
+    html+=rhppContractCalculation(x);
+
     html+='<div class="rhpp-grid">'+
       '<section class="panel rhpp-panel"><h3>Ringkasan Produksi</h3><div class="tablewrap"><table><tbody>'+
         '<tr><td>Nama Kandang / Peternak</td><td>'+esc(x.barn_name||'-')+'</td></tr>'+

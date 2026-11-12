@@ -80,6 +80,21 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   await w.financeRhppPage();assert.equal(w.document.getElementById('rhppPrint'),null);assert.equal(w.document.querySelector('[data-close-rhpp]'),null);
   assert.match(w.document.body.textContent,/Data tidak lengkap/);
 });
+test('contract calculation lists saved costs, return deduction and each applied bonus once',()=>{
+ const w=setup();
+ const x={contract_number:'Kontrak A',harvest_value:100000,main_doc_cost:10000,main_feed_cost:20000,main_ovk_cost:3000,main_other_cost:2000,main_return_cost:5000,sapronak_cost:30000,total_rhpp_cost:30000,base_profit:70000,total_harvest_kg:100,ip:350,diff_fcr:0.1,mortality_pct:4,bonus_ip_rate:20,bonus_ip:2000,bonus_fc_rate:10,bonus_fc:1000,bonus_mortality_rate:5,bonus_mortality:500,farmer_profit:73500};
+ const doc=new JSDOM(w.rhppContractCalculation(x)).window.document;
+ const rows=[...doc.querySelectorAll('tbody tr')];
+ assert.equal(rows.length,12);
+ assert.match(rows.find(r=>r.textContent.startsWith('C.')).textContent,/100\.000,00 − Rp 30\.000,00.*70\.000,00/);
+ assert.match(rows.find(r=>r.textContent.startsWith('D.')).textContent,/100,00 kg × Rp 20,00\/kg.*2\.000,00/);
+ assert.match(rows.find(r=>r.textContent.startsWith('E.')).textContent,/100,00 kg × Rp 10,00\/kg.*1\.000,00/);
+ assert.match(rows.find(r=>r.textContent.startsWith('F.')).textContent,/100,00 kg × Rp 5,00\/kg.*500,00/);
+ assert.match(rows.find(r=>r.textContent.startsWith('G.')).textContent,/70\.000,00 \+ Rp 2\.000,00 \+ Rp 1\.000,00 \+ Rp 500,00.*73\.500,00/);
+ const missing=new JSDOM(w.rhppContractCalculation({...x,bonus_fc_rate:null,bonus_fc:null})).window.document;
+ const unavailable=[...missing.querySelectorAll('tbody tr')].find(r=>r.textContent.startsWith('E.'));
+ assert.match(unavailable.textContent,/kg × -\/kg/);assert.equal(unavailable.lastElementChild.textContent,'-');
+});
 test('DOA population correction retains closed snapshot fallback and existing access guard',()=>{
  const sql=src('sql/20261112_rhpp_doc_population.sql');
  assert.match(sql,/case when a.active then ci.received::numeric else coalesce/);

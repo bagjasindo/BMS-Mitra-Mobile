@@ -426,18 +426,7 @@ async function financeRhppPage(options={}){
       '</tbody></table></div>'+
       '</section>';
 
-    html+='<section class="panel rhpp-panel rhpp-wide"><div class="rhpp-section-head"><div><h3>Sapronak Kontrak RHPP</h3><p class="muted">Hanya sapronak dari kontrak yang masuk biaya RHPP. Tambah Sapronak perusahaan dipisahkan dan tidak memengaruhi nilai RHPP.</p></div></div>'+
-      '<div class="tablewrap"><table><tbody>'+
-        '<tr><td>DOC Kontrak</td><td>Rp '+prodFmt(x.main_doc_cost,0)+'</td></tr>'+
-        '<tr><td>Pakan Kontrak</td><td>Rp '+prodFmt(x.main_feed_cost,0)+'</td></tr>'+
-        '<tr><td>OVK Kontrak</td><td>Rp '+prodFmt(x.main_ovk_cost,0)+'</td></tr>'+
-        '<tr><td>Sapronak Lainnya Kontrak</td><td>Rp '+prodFmt(x.main_other_cost,0)+'</td></tr>'+
-        '<tr><td>Retur Kontrak</td><td>- Rp '+prodFmt(x.main_return_cost,0)+'</td></tr>'+
-        '<tr><td><strong>Total Sapronak Kontrak RHPP</strong></td><td><strong>Rp '+prodFmt(x.sapronak_cost,0)+'</strong></td></tr>'+
-      '</tbody></table></div>'+
-      '<div class="rhpp-cost-line"><span>Tambah Sapronak Perusahaan · di luar RHPP</span><strong>Rp '+prodFmt(x.external_sapronak_cost,0)+'</strong></div>'+
-      '</section>'+
-      '<section class="panel rhpp-panel rhpp-wide rhpp-feed-panel"><h3>Pemakaian Pakan & Retur</h3><div class="tablewrap"><table class="rhpp-feed-table"><thead><tr>'+
+    html+='<section class="panel rhpp-panel rhpp-wide rhpp-feed-panel"><h3>Pemakaian Pakan & Retur</h3><div class="tablewrap"><table class="rhpp-feed-table"><thead><tr>'+
       '<th>Jenis</th><th class="num">Masuk</th><th class="num">Retur</th><th class="num">Bersih</th><th class="num">Bersih Kg</th><th class="num">Nilai Bersih</th>'+
       '</tr></thead><tbody>'+
       contractFeedRows.map(v=>{const parts=String(v.name||'').split(' · '),kind=parts[0]||'',item=parts.slice(1).join(' · ')||kind;return '<tr><td class="rhpp-feed-name"><span class="rhpp-feed-kind">'+esc(kind)+'</span><strong>'+esc(item)+'</strong></td><td class="num">'+prodFmt(v.inQty,2)+'</td><td class="num">'+prodFmt(v.retQty,2)+'</td><td class="num">'+prodFmt(v.inQty-v.retQty,2)+'</td><td class="num">'+prodFmt(v.inKg-v.retKg,2)+'</td><td class="num">Rp '+prodFmt(prodNum(v.inValue)-prodNum(v.retValue),0)+'</td></tr>';}).join('')+
@@ -476,30 +465,6 @@ async function financeRhppPage(options={}){
         '<tr><td>Indeks Prestasi (IP)</td><td>'+prodFmt(x.ip,2)+'</td></tr>'+
       '</tbody></table></div></section>'+
 
-      '<section class="panel rhpp-panel"><h3>Perhitungan RHPP</h3><div class="tablewrap"><table><tbody>'+
-        '<tr><td>Deplesi hitung (DOC dikurangi ekor performa)</td><td>'+prodFmt(x.mortality_pct,2)+'%</td></tr>'+
-        '<tr><td>Nilai Produksi RHPP (Panen + Tambah Daging)</td><td>Rp '+prodFmt(x.harvest_value,0)+'</td></tr>'+
-        '<tr><td>DOC Utama</td><td>Rp '+prodFmt(x.main_doc_cost,0)+'</td></tr>'+
-        '<tr><td>Pakan Utama</td><td>Rp '+prodFmt(x.main_feed_cost,0)+'</td></tr>'+
-        '<tr><td>OVK Utama</td><td>Rp '+prodFmt(x.main_ovk_cost,0)+'</td></tr>'+
-        '<tr><td>Sapronak Lainnya Kontrak</td><td>Rp '+prodFmt(x.main_other_cost,0)+'</td></tr>'+
-        '<tr><td>Retur RHPP</td><td>- Rp '+prodFmt(x.main_return_cost,0)+'</td></tr>'+
-        '<tr><td><strong>Total Sapronak Kontrak RHPP</strong></td><td><strong>Rp '+prodFmt(x.sapronak_cost,0)+'</strong></td></tr>'+
-        '<tr><td><strong>Total Biaya RHPP Kontrak</strong></td><td><strong>Rp '+prodFmt(x.total_rhpp_cost,0)+'</strong></td></tr>'+
-        '<tr><td>Laba Dasar RHPP</td><td>Rp '+prodFmt(x.base_profit,0)+'</td></tr>'+
-      '</tbody></table></div></section>'+
-
-      '<section class="panel rhpp-panel"><h3>Bonus Kontrak & Nilai RHPP</h3><div class="tablewrap"><table><tbody>'+
-        '<tr><td>IP Aktual</td><td>'+prodFmt(x.ip,2)+'</td></tr>'+
-        '<tr><td>Selisih FCR (standar − aktual)</td><td>'+prodFmt(x.diff_fcr,3)+'</td></tr>'+
-        '<tr><td>Deplesi hitung</td><td>'+prodFmt(x.mortality_pct,2)+'%</td></tr>'+
-        '<tr><td>Bonus IP</td><td>Rp '+prodFmt(x.bonus_ip,0)+' ('+prodFmt(x.bonus_ip_rate,0)+'/kg)</td></tr>'+
-        '<tr><td>Bonus Efisiensi Pakan (FC)</td><td>Rp '+prodFmt(x.bonus_fc,0)+' ('+prodFmt(x.bonus_fc_rate,0)+'/kg)</td></tr>'+
-        '<tr><td>Bonus Deplesi</td><td>Rp '+prodFmt(x.bonus_mortality,0)+' ('+prodFmt(x.bonus_mortality_rate,0)+'/kg)</td></tr>'+
-        '<tr><td><strong>Nilai RHPP Kontrak</strong></td><td><strong>Rp '+prodFmt(rhppGross,0)+'</strong></td></tr>'+
-        '<tr><td>RHPP / Chick-In</td><td>Rp '+prodFmt(x.profit_per_chick_in,0)+'</td></tr>'+
-        '<tr><td>RHPP / Ekor Performa</td><td>Rp '+prodFmt(x.profit_per_harvested_bird,0)+'</td></tr>'+
-      '</tbody></table></div></section>'+
       '<section class="panel rhpp-panel"><h3>Penyesuaian Biaya Perusahaan</h3><p class="muted">Dikurangi setelah RHPP kontrak selesai. Tidak mengubah FCR, IP, mortalitas, atau perhitungan performa RHPP.</p><div class="tablewrap"><table><tbody>'+
         '<tr><td>Nilai RHPP Kontrak</td><td>Rp '+prodFmt(rhppGross,0)+'</td></tr>'+
         '<tr><td>Kurang: Tambah Daging</td><td>- Rp '+prodFmt(x.external_meat_cost,0)+'</td></tr>'+

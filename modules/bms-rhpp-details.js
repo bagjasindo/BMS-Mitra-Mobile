@@ -37,7 +37,7 @@ function rhppContractCalculation(x){
   const known=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v));
   const n=(v,d=2)=>known(v)?prodFmt(v,d):'-';
   const rp=v=>known(v)?'Rp '+n(v):'-';
-  const row=(label,formula,value)=>'<tr><td>'+label+'</td><td>'+formula+'</td><td class="num">'+rp(value)+'</td></tr>';
+  const row=(label,formula,value)=>'<tr'+(label.startsWith('G.')?' class="rhpp-total-row"':'')+'><td>'+label+'</td><td>'+formula+'</td><td class="num">'+rp(value)+'</td></tr>';
   const bonus=(name,metric,rate,value)=>row(name,metric+' · '+n(x.total_harvest_kg)+' kg × '+rp(rate)+'/kg',value);
   return '<section data-rhpp-group="calculation" class="panel rhpp-panel rhpp-wide rhpp-contract-calculation"><h3>Rincian Perhitungan Kontrak</h3><p>Kontrak: <strong>'+esc(x.contract_number||'-')+'</strong>. Harga setiap barang tercantum pada rincian kiriman. Nilai dan tarif yang ditampilkan di sini adalah yang dipakai dalam RHPP; untuk periode CLOSED, ringkasan mengikuti catatan final saat ditutup.</p><div class="tablewrap"><table><thead><tr><th>Tahap Perhitungan</th><th>Dasar / Cara Menghitung</th><th>Nilai RHPP</th></tr></thead><tbody>'+
     row('A. Nilai produksi menurut kontrak','Nilai panen ayam + nilai tambah daging untuk performa RHPP, sesuai perhitungan kontrak',x.harvest_value)+
@@ -47,11 +47,14 @@ function rhppContractCalculation(x){
     row('Biaya sapronak lainnya','Jumlahkan nilai barang kontrak selain DOC, pakan, dan OVK',x.main_other_cost)+
     row('Pengurang biaya: retur kontrak','Kurangi biaya dengan nilai retur yang diterima sesuai transaksi: '+rp(x.main_return_cost),x.main_return_cost)+
     row('B. Biaya sapronak bersih','DOC + pakan + OVK + sapronak lainnya − retur kontrak',x.sapronak_cost)+
+    row('Total biaya RHPP kontrak','Total biaya kontrak yang menjadi pengurang nilai produksi',x.total_rhpp_cost)+
     row('C. Laba dasar kontrak','A − total biaya RHPP kontrak = '+rp(x.harvest_value)+' − '+rp(x.total_rhpp_cost),x.base_profit)+
     bonus('D. Bonus IP','IP aktual '+n(x.ip),x.bonus_ip_rate,x.bonus_ip)+
     bonus('E. Bonus efisiensi pakan (FC)','Selisih FCR '+n(x.diff_fcr,3),x.bonus_fc_rate,x.bonus_fc)+
     bonus('F. Bonus deplesi','Deplesi hitung '+n(x.mortality_pct)+'%',x.bonus_mortality_rate,x.bonus_mortality)+
     row('G. Hasil RHPP kontrak','C + D + E + F = '+rp(x.base_profit)+' + '+rp(x.bonus_ip)+' + '+rp(x.bonus_fc)+' + '+rp(x.bonus_mortality),x.farmer_profit)+
+    row('Hasil kontrak per DOC masuk','G ÷ populasi dasar RHPP ('+n(x.chick_in_birds,0)+' ekor)',x.profit_per_chick_in)+
+    row('Hasil kontrak per ekor performa','G ÷ total ekor performa ('+n(x.total_harvest_birds,0)+' ekor)',x.profit_per_harvested_bird)+
     '</tbody></table></div><p class="muted">Bonus menggunakan total berat performa RHPP: panen aktual + tambah daging. Tarif Rp 0 berarti bonus tersebut tidak diberlakukan pada perhitungan ini; tanda - berarti tarif atau nilai tidak tercatat. Biaya pembelian tambah daging dan sapronak tambahan perusahaan dikurangkan setelah hasil kontrak (G), pada bagian Penyesuaian Biaya Perusahaan.</p></section>';
 }
 function rhppOrganizeReport(source){
@@ -70,7 +73,7 @@ function rhppOrganizeReport(source){
     const heading=doc.createElement('h2');heading.className='rhpp-group-title';heading.textContent=title;
     const p=doc.createElement('p');p.className='muted rhpp-group-note';p.textContent=note;block.append(heading,p);return [key,block];
   }));
-  const mapping={'Rincian DOC & Kontrak':'supplies','Rincian Panen':'harvest','Pemakaian Pakan & Retur':'production','Tambah Sapronak Perusahaan · Di luar RHPP':'production','Ringkasan Produksi':'production','Kinerja Produksi':'production','Sapronak Kontrak RHPP':'calculation','Perhitungan RHPP':'calculation','Bonus Kontrak & Nilai RHPP':'calculation','Penyesuaian Biaya Perusahaan':'calculation'};
+  const mapping={'Rincian DOC & Kontrak':'supplies','Rincian Panen':'harvest','Pemakaian Pakan & Retur':'production','Tambah Sapronak Perusahaan · Di luar RHPP':'production','Ringkasan Produksi':'production','Kinerja Produksi':'production','Penyesuaian Biaya Perusahaan':'calculation'};
   const panels=[...source.querySelectorAll('section.rhpp-panel')];
   for(const panel of panels){
     if(panel.hasAttribute('data-rhpp-controls'))continue;

@@ -85,7 +85,7 @@ test('contract calculation lists saved costs, return deduction and each applied 
  const x={contract_number:'Kontrak A',harvest_value:100000,main_doc_cost:10000,main_feed_cost:20000,main_ovk_cost:3000,main_other_cost:2000,main_return_cost:5000,sapronak_cost:30000,total_rhpp_cost:30000,base_profit:70000,total_harvest_kg:100,ip:350,diff_fcr:0.1,mortality_pct:4,bonus_ip_rate:20,bonus_ip:2000,bonus_fc_rate:10,bonus_fc:1000,bonus_mortality_rate:5,bonus_mortality:500,farmer_profit:73500};
  const doc=new JSDOM(w.rhppContractCalculation(x)).window.document;
  const rows=[...doc.querySelectorAll('tbody tr')];
- assert.equal(rows.length,12);
+ assert.equal(rows.length,15);
  assert.match(rows.find(r=>r.textContent.startsWith('C.')).textContent,/100\.000,00 − Rp 30\.000,00.*70\.000,00/);
  assert.match(rows.find(r=>r.textContent.startsWith('D.')).textContent,/100,00 kg × Rp 20,00\/kg.*2\.000,00/);
  assert.match(rows.find(r=>r.textContent.startsWith('E.')).textContent,/100,00 kg × Rp 10,00\/kg.*1\.000,00/);

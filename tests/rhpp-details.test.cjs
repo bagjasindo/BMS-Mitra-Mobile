@@ -74,7 +74,12 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   assert.match(finalRow.textContent,/777\.777/);
   assert.deepEqual([...w.document.querySelectorAll('[data-rhpp-report-group]')].map(g=>g.dataset.rhppReportGroup),['supplies','harvest','returns','production','calculation']);
   const closedHtml=w.rhppDocumentHtml(w.document.querySelector('#rhppExportArea'),{company_name:'BMS'});
-  assert.match(new JSDOM(closedHtml).window.document.body.textContent,/777\.777/);
+  assert.match(new JSDOM(closedHtml).window.document.body.textContent,/777\\.777/);
+  const closedOne=new JSDOM(w.rhppOnePageHtml(w.document.querySelector('#rhppExportArea'),{company_name:'BMS'})).window.document;
+  assert.match(closedOne.body.textContent,/777\\.777/);
+  assert.match(closedOne.body.textContent,/DOA \\(catatan\\)/);
+  assert.match(closedOne.querySelector('style').textContent,/@page\\{size:A4 landscape/);
+  assert.match(closedOne.body.textContent,/Perhitungan Kontrak/);
   assert.equal(w.document.querySelector('[data-close-rhpp]'),null);
   assert.ok(w.document.querySelector('#rhppHistoryBack'));
   // Partial reads must block finalisation and exports rather than displaying false totals.

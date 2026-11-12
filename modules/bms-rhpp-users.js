@@ -495,16 +495,17 @@ async function financeRhppPage(options={}){
   const reportFile='RHPP_'+(reportRow?.barn_code||'Kandang')+'_'+(chickIns.find(v=>v.contract_assignment_id===selectedAssignment)?.arrived_on||'Periode')+'_'+(options.historyAssignment?'CLOSED':'CEK');
   // Screen, print, PDF and Excel use the same rendered values; no second financial calculation.
   const rhppDocHtml=()=>rhppDocumentHtml(rhppExport,company);
-  const rhppPrintOpen=(pdf=false)=>{
+  const rhppOnePage=()=>rhppOnePageHtml(rhppExport,company);
+  const rhppPrintOpen=()=>{
     const w=window.open('','_blank');if(!w)return msg('Popup cetak diblokir browser.');
-    w.document.write(rhppDocHtml(pdf));w.document.close();
+    w.document.write(rhppOnePage());w.document.close();
     setTimeout(()=>{w.focus();w.print();},500);
   };
   const printBtn=document.getElementById('rhppPrint');
   const pdfBtn=document.getElementById('rhppPdf');
   const excelBtn=document.getElementById('rhppExcel');
-  if(printBtn)printBtn.onclick=()=>rhppPrintOpen(false);
-  if(pdfBtn)pdfBtn.onclick=()=>BMSCore.savePdfHtml(rhppDocHtml(true),reportFile+'.pdf',{pageSize:'landscape'}).catch(error=>msg(error?.message||'PDF gagal dibuat.'));
+  if(printBtn)printBtn.onclick=()=>rhppPrintOpen();
+  if(pdfBtn)pdfBtn.onclick=()=>BMSCore.savePdfHtml(rhppOnePage(),reportFile+'.pdf',{pageSize:'landscape'}).catch(error=>msg(error?.message||'PDF gagal dibuat.'));
   if(excelBtn)excelBtn.onclick=()=>{
     const blob=BMSCore.excelBlob([rhppDocHtml()]);
     const url=URL.createObjectURL(blob),a=document.createElement('a');

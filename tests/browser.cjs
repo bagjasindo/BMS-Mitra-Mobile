@@ -210,6 +210,18 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
     await command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<901});
     assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true,'RHPP page overflows at '+width);
   }
+  const paper=await evaluate(`
+    const area=document.querySelector('#rhppExportArea'),html=rhppOnePageHtml(area,{company_name:'BMS'});
+    const frame=document.createElement('iframe');frame.style.cssText='position:fixed;left:-3000px;top:0;width:1100px;height:780px;border:0';document.body.append(frame);
+    frame.srcdoc=html;await new Promise(resolve=>frame.onload=resolve);await new Promise(resolve=>setTimeout(resolve,30));
+    const d=frame.contentDocument,main=d.querySelector('main'),result={height:main.scrollHeight+d.querySelector('header').getBoundingClientRect().height+d.querySelector('footer').getBoundingClientRect().height,text:d.body.textContent,tables:d.querySelectorAll('table').length};frame.remove();
+    db.from=window.__rhppSmoke.from;db.rpc=window.__rhppSmoke.rpc;profile=window.__rhppSmoke.profile;tab=window.__rhppSmoke.tab;delete window.__rhppSmoke;login();return result;
+  `);
+  assert.ok(paper.height<=680,'One-page RHPP print content exceeds one A4 landscape sheet: '+paper.height+'px');
+  assert.match(paper.text,/RHPP — Ringkasan satu lembar/);
+  assert.match(paper.text,/Rp 72\\.900\\.000,00/);
+  assert.equal(paper.tables,6);
+  console.log('PASS: RHPP one-sheet print fits page and retains DOC, production, contract calculation and final result');
   await evaluate(`
     const area=document.querySelector('#rhppExportArea'),doc=new DOMParser().parseFromString(rhppDocumentHtml(area,{company_name:'BMS'}),'text/html');
     const cells=node=>[...node.querySelectorAll('th,td')].map(n=>n.textContent);

@@ -172,6 +172,29 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
   `);
   await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   console.log('PASS: Admin work performance charts, role/category filters, recording completeness, error handling and non-admin guards');
+  await evaluate(`
+    window.__expSmoke={from:db.from,profile,tab};profile={role:'LOGISTIK',full_name:'Uji Logistik'};tab='logistik_laporan_expedisi';
+    const tables={finance_expedition_trips:[{id:'A',trip_date:prodToday(),mts_sj:'SJ-1',driver:'A',vehicle:'D 1'},{id:'B',trip_date:prodToday(),reference:'KAS_JALAN_PENDING_SJ',driver:'B',vehicle:'D 2'},{id:'C',trip_date:prodToday(),mts_sj:'SJ-3',driver:'A',vehicle:'D 1'}],finance_expedition_trip_destinations:[{trip_id:'A',line_no:1,destination_name:'Kandang A',cargo:'Pakan',qty:10,unit:'zak'},{trip_id:'A',line_no:2,destination_name:'Kandang B',cargo:'Pakan',qty:100,unit:'kg'}],finance_expedition_invoice_items:[{invoice_id:'I',trip_id:'A'}],finance_expedition_invoices:[{id:'I',invoice_number:'INV-1',status:'ISSUED'}]};
+    db.from=table=>{if(!tables[table])throw new Error('Unexpected report source');const q={select:columns=>{if(/trip_price|amount|paid_total|receivable/.test(columns))throw new Error('Unexpected financial data');return q},order:()=>q,then:resolve=>Promise.resolve({data:tables[table]}).then(resolve)};return q};
+    await logisticsExpeditionReportPage();
+  `);
+  assert.equal(await evaluate("document.querySelectorAll('nav [data-tab=logistik_laporan_expedisi]').length"),1);
+  assert.equal(await evaluate("canViewTab('laporan_expedisi')"),false);
+  assert.equal(await evaluate("document.querySelectorAll('#expLogTrips tbody tr').length"),3);
+  assert.match(await evaluate("document.querySelector('#expLogReport').textContent"),/10 zak.*100 kg/);
+  for(const width of [390,768,1280]){
+    await command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<901});
+    assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true,'Logistics report overflows at '+width);
+  }
+  await evaluate("const f=document.querySelector('#expLogFilter');f.elements.status.value='MENUNGGU SJ';f.requestSubmit()");
+  assert.equal(await evaluate("document.querySelectorAll('#expLogTrips tbody tr').length"),1);
+  assert.match(await evaluate("document.querySelector('#expLogTrips').textContent"),/MENUNGGU SJ/);
+  await evaluate("document.querySelector('#expLogReset').click()");
+  assert.equal(await evaluate("document.querySelectorAll('#expLogTrips tbody tr').length"),3);
+  assert.equal(await evaluate("typeof document.querySelector('#expLogPdf').onclick"),'function');
+  await evaluate("db.from=window.__expSmoke.from;profile=window.__expSmoke.profile;tab=window.__expSmoke.tab;delete window.__expSmoke;login()");
+  await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  console.log('PASS: Logistics expedition report navigation, filters, distinct units, export bindings and restricted finance access');
   const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync(path.join(__dirname,'output/login-mobile.png'),Buffer.from(shot.data,'base64'));
   assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
   console.log('PASS: mobile login fits a 390px viewport');

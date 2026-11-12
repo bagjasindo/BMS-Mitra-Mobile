@@ -23,7 +23,7 @@ async function productionBase(options={}){
   const allowedBarnIds=new Set(assignments.map(a=>a.barn_id).filter(Boolean));
   const scoped=x=>profile?.role==='PPL'?(x||[]).filter(v=>allowedIds.has(v.contract_assignment_id)):(x||[]);
   const visibleBarns=profile?.role==='PPL'?(br.data||[]).filter(b=>allowedBarnIds.has(b.id)):(br.data||[]);
-  return {err,assignments,barns:visibleBarns,masters:cr.data||[],chicks:scoped(cir.data),links:scoped(abr.data),abks:er.data||[],items:ir.data||[],feedItems:(ir.data||[]).filter(i=>i.category==='PAKAN'),standards:psr.data||[],harvests:scoped(mhr.data),livePrices:lpr.data||[],rhppCosts:scoped(costr.data),scopeRows:scoped};
+  return {err,assignments,barns:visibleBarns,masters:cr.data||[],chicks:scoped(cir.data),links:scoped(abr.data),abks:er.data||[],items:ir.data||[],feedItems:(ir.data||[]).filter(i=>i.category==='PAKAN'),standards:psr.data||[],harvests:scoped(mhr.data).slice().sort((a,b)=>String(a.harvested_on||'').localeCompare(String(b.harvested_on||''))),livePrices:lpr.data||[],rhppCosts:scoped(costr.data),scopeRows:scoped};
 }
 function estimateContractLivePrice(d,a,bw){
   const w=prodNum(bw);
@@ -2201,7 +2201,7 @@ async function pplRhppAbkViewPage(){
   const selectedContract=selectedContractId?leagueContracts.find(x=>x.id===selectedContractId):null;
   const selectedLivePrices=selectedContractId?(d.livePrices||[]).filter(x=>x.contract_id===selectedContractId):[];
   const selectedHarvestRows=selectedResult
-    ?sizes.filter(x=>x.result_id===selectedResult.id).map(x=>{
+    ?sizes.filter(x=>x.result_id===selectedResult.id).slice().sort((a,b)=>String(a.harvest_date||'').localeCompare(String(b.harvest_date||''))).map(x=>{
       const birds=prodNum(x.birds),kg=prodNum(x.weight_kg),bw=birds?kg/birds:0;
       const priceRow=selectedLivePrices.find(p=>bw>=prodNum(p.min_weight_kg)&&(p.max_weight_kg==null||bw<prodNum(p.max_weight_kg)));
       const price=prodNum(priceRow?.price_per_kg);
@@ -2530,7 +2530,7 @@ async function pplRhppViewPage(){
     const contract=d.masters.find(x=>x.id===a?.master_contract_id);
     const auditLivePrices=(d.livePrices||[]).filter(x=>x.contract_id===a?.master_contract_id);
     const isMandiri=String(a?.cycle_type||'').toUpperCase()==='MANDIRI'||!a?.master_contract_id;
-    const auditHarvestRows=(d.harvests||[]).filter(x=>x.contract_assignment_id===selectedAssignment).map(x=>{
+    const auditHarvestRows=(d.harvests||[]).filter(x=>x.contract_assignment_id===selectedAssignment).slice().sort((a,b)=>String(a.harvested_on||'').localeCompare(String(b.harvested_on||''))).map(x=>{
       const birds=prodNum(x.birds),kg=prodNum(x.net_weight_kg),bw=prodNum(x.avg_weight_kg)||(birds?kg/birds:0);
       const priceRow=auditLivePrices.find(p=>bw>=prodNum(p.min_weight_kg)&&(p.max_weight_kg==null||bw<prodNum(p.max_weight_kg)));
       const savedPrice=prodNum(x.price_per_kg)>0?prodNum(x.price_per_kg):(kg>0&&prodNum(x.total_amount)>0?prodNum(x.total_amount)/kg:0);

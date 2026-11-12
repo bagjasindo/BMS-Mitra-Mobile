@@ -20,7 +20,11 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
     logistics_return_items:[{return_id:'ret',item_id:'ovk',quantity:2,quantity_kg:null,unit_price:10000},{return_id:'ret',item_id:'feed',quantity:1,quantity_kg:50,unit_price:500000}],
     logistics_external_shipments:[{id:'ext',contract_assignment_id:'a',shipment_date:'2026-10-03',reference_number:'EXT-01'}],
     logistics_external_shipment_items:[{external_shipment_id:'ext',item_id:'feed',quantity:2,quantity_kg:100,purchase_unit_price:450000}],
-    marketing_contract_harvests:[{contract_assignment_id:'a',harvested_on:'2026-11-01',birds:6800,net_weight_kg:12001.1,buyer_name:'Pembeli A',vehicle_number:'D 1234',price_per_kg:22000,total_amount:264024200}],
+    marketing_contract_harvests:[
+      {contract_assignment_id:'a',harvested_on:'2026-11-01',birds:4800,net_weight_kg:9001.1,buyer_name:'Pembeli A',vehicle_number:'D 1234',price_per_kg:22000,total_amount:198024200},
+      {contract_assignment_id:'a',harvested_on:'2026-10-20',birds:2000,net_weight_kg:3000,buyer_name:'Pembeli B',vehicle_number:'D 5678',price_per_kg:22000,total_amount:66000000}
+    ],
+    marketing_external_meat_purchases:[{contract_assignment_id:'a',purchase_date:'2026-10-25',birds:0,weight_kg:1,purchase_price_per_kg:0,product_name:'Daging Uji'}],
     chick_ins:[{contract_assignment_id:'a',received:8100,doa:2,arrived_on:'2026-10-02'}],
     company_profile:{company_name:'BMS'},
   };
@@ -48,6 +52,8 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   assert.match(groups[0].textContent,/EXT-01/);
   assert.doesNotMatch(groups[0].textContent,/RT-001/);
   assert.match(groups[1].textContent,/Pembeli A.*D 1234/);
+  const dates=[...area.querySelectorAll('.rhpp-harvest-table tbody tr')].slice(0,3).map(r=>r.cells[0].textContent);
+  assert.deepEqual(dates,['2026-10-20','2026-10-25','2026-11-01'],'RHPP harvest and meat rows must follow event date');
   assert.match(groups[2].textContent,/RT-001.*Pakan Starter.*1,00.*zak.*50,00/);
   assert.match(groups[3].textContent,/Istilah: DOC = bibit/);
   w.rhppOrganizeReport(area);assert.equal(area.querySelectorAll('[data-rhpp-report-group]').length,5);

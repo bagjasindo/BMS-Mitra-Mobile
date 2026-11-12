@@ -326,13 +326,17 @@ async function financeRhppPage(options={}){
     const fin=finals.find(r=>r.contract_assignment_id===x.contract_assignment_id);
     const ready=!fin&&!!x.active&&prodNum(x.chick_in_birds)>0&&prodNum(x.total_harvest_birds)>0&&prodNum(x.total_harvest_kg)>0&&prodNum(x.net_feed_kg)>0&&prodNum(x.sapronak_cost)>0;
     const status=fin?'CLOSED · RHPP SISTEM FINAL':ready?'DATA TERSEDIA · PERLU VERIFIKASI AKHIR':'BELUM SIAP';
-    const hs=harvests.filter(h=>h.contract_assignment_id===x.contract_assignment_id);
-    const ms=meats.filter(m=>m.contract_assignment_id===x.contract_assignment_id);
+    const hs=harvests.filter(h=>h.contract_assignment_id===x.contract_assignment_id).slice().sort((a,b)=>String(a.harvested_on||'').localeCompare(String(b.harvested_on||'')));
+    const ms=meats.filter(m=>m.contract_assignment_id===x.contract_assignment_id).slice().sort((a,b)=>String(a.purchase_date||'').localeCompare(String(b.purchase_date||'')));
     const actualHarvestBirds=hs.reduce((s,h)=>s+prodNum(h.birds),0);
     const actualHarvestKg=hs.reduce((s,h)=>s+prodNum(h.net_weight_kg),0);
     const actualHarvestValue=hs.reduce((s,h)=>s+prodNum(h.total_amount),0);
     const meatBirds=ms.reduce((s,m)=>s+prodNum(m.birds),0);
     const meatKg=ms.reduce((s,m)=>s+prodNum(m.weight_kg),0);
+    const harvestEventRows=[
+      ...hs.map(h=>({date:h.harvested_on,kind:0,row:'<tr><td class="rhpp-sticky-col">'+prodDateId(h.harvested_on)+'</td><td><strong>PANEN AKTUAL</strong></td><td>'+esc([h.buyer_name,h.vehicle_number].filter(Boolean).join(' · ')||'-')+'</td><td class="num">'+prodFmt(h.birds,0)+'</td><td class="num">'+prodFmt(h.net_weight_kg,2)+'</td><td class="num">'+prodFmt(h.avg_weight_kg,3)+'</td><td class="num">Rp '+prodFmt(h.price_per_kg,0)+'</td><td class="num rhpp-money-col">Rp '+prodFmt(h.total_amount,0)+'</td></tr>'})),
+      ...ms.map(m=>{const n=prodNum(m.birds),kg=prodNum(m.weight_kg),bw=n>0?kg/n:0,total=kg*prodNum(m.purchase_price_per_kg);return {date:m.purchase_date,kind:1,row:'<tr><td class="rhpp-sticky-col">'+prodDateId(m.purchase_date)+'</td><td><strong>TAMBAH DAGING</strong></td><td>'+esc(m.product_name||'Daging/Ayam')+'</td><td class="num">'+(n>0?prodFmt(n,0):'-')+'</td><td class="num">'+prodFmt(kg,2)+'</td><td class="num">'+(bw>0?prodFmt(bw,3):'-')+'</td><td class="num">Rp '+prodFmt(m.purchase_price_per_kg,0)+'</td><td class="num rhpp-money-col">Rp '+prodFmt(total,0)+'</td></tr>'};})
+    ].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||a.kind-b.kind).map(v=>v.row).join('');
     const rhppGross=prodNum(x.farmer_profit);
     const companyExtraCost=prodNum(x.external_meat_cost)+prodNum(x.external_sapronak_cost);
     const companyNet=rhppGross-companyExtraCost;
@@ -418,8 +422,7 @@ async function financeRhppPage(options={}){
       '<div class="tablewrap rhpp-harvest-wrap"><table class="rhpp-harvest-table"><thead><tr>'+
       '<th class="rhpp-sticky-col">Tanggal</th><th>Sumber</th><th>Keterangan</th><th class="num">Ekor</th><th class="num">Berat (Kg)</th><th class="num">BW</th><th class="num">Harga/Kg</th><th class="num rhpp-money-col">Nilai Produksi</th>'+
       '</tr></thead><tbody>'+
-      hs.map(h=>'<tr><td class="rhpp-sticky-col">'+prodDateId(h.harvested_on)+'</td><td><strong>PANEN AKTUAL</strong></td><td>'+esc([h.buyer_name,h.vehicle_number].filter(Boolean).join(' · ')||'-')+'</td><td class="num">'+prodFmt(h.birds,0)+'</td><td class="num">'+prodFmt(h.net_weight_kg,2)+'</td><td class="num">'+prodFmt(h.avg_weight_kg,3)+'</td><td class="num">Rp '+prodFmt(h.price_per_kg,0)+'</td><td class="num rhpp-money-col">Rp '+prodFmt(h.total_amount,0)+'</td></tr>').join('')+
-      ms.map(m=>{const n=prodNum(m.birds),kg=prodNum(m.weight_kg),bw=n>0?kg/n:0,total=kg*prodNum(m.purchase_price_per_kg);return '<tr><td class="rhpp-sticky-col">'+prodDateId(m.purchase_date)+'</td><td><strong>TAMBAH DAGING</strong></td><td>'+esc(m.product_name||'Daging/Ayam')+'</td><td class="num">'+(n>0?prodFmt(n,0):'-')+'</td><td class="num">'+prodFmt(kg,2)+'</td><td class="num">'+(bw>0?prodFmt(bw,3):'-')+'</td><td class="num">Rp '+prodFmt(m.purchase_price_per_kg,0)+'</td><td class="num rhpp-money-col">Rp '+prodFmt(total,0)+'</td></tr>';}).join('')+
+      harvestEventRows+
       '<tr class="rhpp-total-row"><th colspan="3">TOTAL PANEN AKTUAL</th><th class="num">'+prodFmt(actualHarvestBirds,0)+'</th><th class="num">'+prodFmt(actualHarvestKg,2)+'</th><th class="num">'+prodFmt(actualHarvestBirds>0?actualHarvestKg/actualHarvestBirds:0,3)+'</th><th></th><th class="num">Rp '+prodFmt(actualHarvestValue,0)+'</th></tr>'+
       '<tr class="rhpp-total-row"><th colspan="3">TOTAL TAMBAH DAGING</th><th class="num">'+prodFmt(meatBirds,0)+'</th><th class="num">'+prodFmt(meatKg,2)+'</th><th class="num">'+prodFmt(meatBirds>0?meatKg/meatBirds:0,3)+'</th><th></th><th class="num">Rp '+prodFmt(x.external_meat_cost,0)+'</th></tr>'+
       '<tr class="rhpp-total-row"><th colspan="3">TOTAL PERFORMA RHPP</th><th class="num">'+prodFmt(x.total_harvest_birds,0)+'</th><th class="num">'+prodFmt(x.total_harvest_kg,2)+'</th><th class="num">'+prodFmt(x.avg_bw_kg,3)+'</th><th></th><th class="num">Rp '+prodFmt(x.harvest_value,0)+'</th></tr>'+

@@ -62,23 +62,24 @@ function rhppOrganizeReport(source){
   source.dataset.rhppOrganized='1';
   const doc=source.ownerDocument;
   const definitions=[
-    ['supplies','1. Kiriman Sapronak','Sapronak adalah kebutuhan pemeliharaan: DOC (bibit ayam), pakan, serta OVK (obat dan vaksin). Periksa tanggal, nomor dokumen, jumlah, satuan, harga, dan nilai setiap kiriman.'],
-    ['harvest','2. Hasil Tangkap Ayam','Rincian ayam yang ditangkap atau dipanen, termasuk jumlah ekor, berat bersih, pembeli, kendaraan, dan nilai transaksi. Tambah daging adalah pembelian ayam/daging tambahan perusahaan dan ditandai terpisah. Nilai transaksi panen mengikuti catatan Marketing; nilai produksi untuk RHPP mengikuti harga kontrak.'],
-    ['returns','3. Retur Pakan','Retur adalah barang yang dikembalikan. Retur kontrak mengurangi biaya sapronak sesuai nilai yang tercatat. Retur tambahan perusahaan dan pakan yang ditahan perusahaan diberi penanda tersendiri. Retur barang lain juga dicantumkan jika ada.'],
-    ['production','4. Hasil Produksi','Ringkasan populasi, hasil panen, bobot, umur, dan pemakaian pakan. Angka performa di bawah menjadi dasar penilaian sesuai kontrak.'],
-    ['calculation','5. Hasil Perhitungan','Urutan nilai: pendapatan produksi dikurangi biaya sapronak bersih, ditambah bonus kontrak, kemudian dikurangi biaya tambahan perusahaan. Lihat hasil akhir pada bagian paling bawah.']
+    ['supplies','1. Kiriman Sapronak',''],
+    ['harvest','2. Hasil Tangkap Ayam',''],
+    ['returns','3. Retur Pakan',''],
+    ['production','4. Hasil Produksi',''],
+    ['calculation','5. Hasil Perhitungan','']
   ];
   const groups=new Map(definitions.map(([key,title,note])=>{
     const block=doc.createElement('div');block.className='rhpp-report-group';block.dataset.rhppReportGroup=key;
     const heading=doc.createElement('h2');heading.className='rhpp-group-title';heading.textContent=title;
-    const p=doc.createElement('p');p.className='muted rhpp-group-note';p.textContent=note;block.append(heading,p);return [key,block];
+    block.append(heading);return [key,block];
   }));
-  const mapping={'Rincian DOC & Kontrak':'supplies','Rincian Panen':'harvest','Pemakaian Pakan & Retur':'production','Tambah Sapronak Perusahaan · Di luar RHPP':'production','Ringkasan Produksi':'production','Kinerja Produksi':'production','Penyesuaian Biaya Perusahaan':'calculation'};
+  const mapping={'Rincian DOC & Kontrak':'supplies','Rincian Panen':'harvest','Tambah Sapronak Perusahaan · Di luar RHPP':'production','Ringkasan Produksi':'production','Kinerja Produksi':'production','Penyesuaian Biaya Perusahaan':'calculation'};
   const panels=[...source.querySelectorAll('section.rhpp-panel')];
   for(const panel of panels){
     if(panel.hasAttribute('data-rhpp-controls'))continue;
     const h=panel.querySelector('h3'),title=h?.textContent.trim();
     const key=panel.dataset.rhppGroup||mapping[title];
+    if(title==='Pemakaian Pakan & Retur'||title==='Tambah Sapronak Perusahaan · Di luar RHPP'||panel.classList.contains('rhpp-intro')){panel.remove();continue;}
     if(key)groups.get(key).append(panel);
     if(title==='Rincian Panen')h.textContent='Rincian Hasil Tangkap / Panen Ayam';
     if(title==='Rincian DOC & Kontrak'){
@@ -87,11 +88,7 @@ function rhppOrganizeReport(source){
     }
   }
   for(const block of groups.values())source.append(block);
-  const glossary=doc.createElement('section');glossary.className='panel rhpp-panel rhpp-glossary';
-  glossary.innerHTML='<h3>Panduan Membaca Hasil Produksi</h3><dl><dt>DOC</dt><dd>Bibit ayam yang diterima saat awal pemeliharaan.</dd><dt>DOA</dt><dd>Ayam mati saat kedatangan. Dicantumkan sebagai catatan; periode CLOSED mengikuti angka final saat ditutup.</dd><dt>BW / Bobot Badan</dt><dd>Rata-rata berat ayam per ekor, dalam kg.</dd><dt>FCR / Konversi Pakan</dt><dd>Jumlah kg pakan kontrak untuk menghasilkan 1 kg bobot ayam. Bandingkan dengan FCR standar kontrak.</dd><dt>Selisih FCR (DIFF FCR)</dt><dd>FCR standar dikurangi FCR aktual; angka positif berarti pemakaian pakan lebih efisien daripada standar.</dd><dt>IP / Indeks Prestasi</dt><dd>Nilai gabungan performa yang memperhitungkan bobot, umur, FCR, dan deplesi.</dd><dt>Deplesi hitung</dt><dd>Persentase selisih populasi awal terhadap ekor performa RHPP. Ini bukan rincian kematian harian dari Recording PPL.</dd><dt>Hasil akhir</dt><dd>Nilai RHPP kontrak setelah dikurangi biaya tambahan perusahaan. RHPP Real adalah uang yang diterima dan dicatat terpisah oleh Keuangan.</dd></dl>';
-  groups.get('production').append(glossary);
-  const intro=source.querySelector('.rhpp-intro');
-  if(intro){intro.querySelector('h3').textContent='Rekap Hasil Pemeliharaan Peternak (RHPP)';intro.querySelector('p').textContent='Baca berurutan: kiriman sapronak → hasil tangkap ayam → retur → hasil produksi → hasil perhitungan. CLOSED berarti periode sudah ditutup. Angka final memakai catatan yang dikunci saat penutupan; rincian transaksi asal disertakan untuk pemeriksaan.';}
+  const glossary=doc.createElement('p');glossary.className='muted rhpp-glossary';glossary.textContent='Istilah: DOC = bibit; OVK = obat/vaksin; BW = bobot badan; FCR = kg pakan per kg bobot; IP = indeks prestasi; deplesi = selisih populasi dan hasil performa.';groups.get('production').append(glossary);
   const style=doc.createElement('style');style.textContent='.rhpp-report-group{min-width:0;margin-top:22px}.rhpp-group-title{font-size:18px;color:#0b5f8f;border-bottom:2px solid #0b5f8f;padding-bottom:8px;break-after:avoid}.rhpp-group-note{margin:8px 0 14px;line-height:1.55}.rhpp-glossary dt{font-weight:700;margin-top:10px}.rhpp-glossary dd{margin:3px 0 0;line-height:1.5}.rhpp-detail-table{min-width:880px}.rhpp-report-group .rhpp-summary-cards{margin:12px 0}.rhpp-report-group .rhpp-panel{margin-bottom:14px}';source.prepend(style);
 }
 function rhppDocumentHtml(source,company={}){
@@ -102,5 +99,5 @@ function rhppDocumentHtml(source,company={}){
   const contacts=[company.address,company.phone,company.email,company.website].filter(Boolean).join(' · ');
   const logo=/^https?:\/\//i.test(company.logo_url||'')?'<img alt="Logo perusahaan" src="'+esc(company.logo_url)+'" style="max-width:80px;max-height:60px">':'';
   return '<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Rekap Hasil Pemeliharaan Peternak — RHPP</title><style>'+RHPP_SCREEN_STYLE.replace(/<\/?style[^>]*>/g,'')+'\n'+
-    '@page{size:A4 landscape;margin:10mm}html,body{margin:0;background:white;color:#111;font:10pt Arial,sans-serif}.rhpp-page{display:block!important;max-width:none!important;padding:0!important}.panel,.rhpp-panel{display:block!important;box-shadow:none!important;margin:10px 0!important;padding:8px!important;border:1px solid #bbb!important;break-inside:auto!important;page-break-inside:auto!important}.tablewrap{overflow:visible!important}table{width:100%!important;min-width:0!important;border-collapse:collapse!important;table-layout:auto!important}th,td{position:static!important;white-space:normal!important;overflow-wrap:anywhere;border:1px solid #bbb;padding:5px;font-size:9pt!important}thead{display:table-header-group}tr{break-inside:avoid}h3{break-after:avoid;font-size:12pt!important}.rhpp-section-head{display:block!important}.rhpp-summary-cards,.rhpp-grid{display:block!important}.rhpp-group-title{font-size:14pt;border-bottom:2px solid #0b5f8f;padding:7px 0;color:#0b5f8f;break-after:avoid}.rhpp-report-group{margin-top:16px}.rhpp-glossary dt{font-weight:bold;margin-top:7px}.rhpp-glossary dd{margin:2px 0 0}h2,h3{break-after:avoid}footer{border-top:1px solid #bbb;padding-top:6px}.rhpp-summary-card{margin:5px 0}.rhpp-count{display:inline-block!important;white-space:normal!important}header{border-bottom:2px solid #333;padding-bottom:8px}footer{font-size:8pt;margin-top:12px}button,.report-actions{display:none!important}</style></head><body><header>'+logo+'<h2>'+esc(companyName)+'</h2><p>'+esc(contacts)+'</p><strong>REKAP HASIL PEMELIHARAAN PETERNAK (RHPP)</strong></header>'+clone.innerHTML+'<footer>Dokumen pemeriksaan RHPP · Dicetak: '+esc(new Date().toLocaleString('id-ID'))+'</footer></body></html>';
+    '@page{size:A4 landscape;margin:10mm}html,body{margin:0;background:white;color:#111;font:10pt Arial,sans-serif}.rhpp-page{display:block!important;max-width:none!important;padding:0!important}.panel,.rhpp-panel{display:block!important;box-shadow:none!important;margin:10px 0!important;padding:8px!important;border:1px solid #bbb!important;break-inside:auto!important;page-break-inside:auto!important}.tablewrap{overflow:visible!important}table{width:100%!important;min-width:0!important;border-collapse:collapse!important;table-layout:auto!important}th,td{position:static!important;white-space:normal!important;overflow-wrap:anywhere;border:1px solid #bbb;padding:5px;font-size:9pt!important}thead{display:table-header-group}tr{break-inside:avoid}h3{break-after:avoid;font-size:12pt!important}.rhpp-section-head{display:block!important}.rhpp-summary-cards,.rhpp-grid{display:block!important}.rhpp-group-title{font-size:14pt;border-bottom:2px solid #0b5f8f;padding:7px 0;color:#0b5f8f;break-after:avoid}.rhpp-report-group{margin-top:16px}.rhpp-glossary dt{font-weight:bold;margin-top:7px}.rhpp-glossary dd{margin:2px 0 0}h2,h3{break-after:avoid}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}.rhpp-panel{break-inside:auto!important;page-break-inside:auto!important}footer{border-top:1px solid #bbb;padding-top:6px}.rhpp-summary-card{margin:5px 0}.rhpp-count{display:inline-block!important;white-space:normal!important}header{border-bottom:2px solid #333;padding-bottom:8px}footer{font-size:8pt;margin-top:12px}button,.report-actions{display:none!important}</style></head><body><header>'+logo+'<h2>'+esc(companyName)+'</h2><p>'+esc(contacts)+'</p><strong>REKAP HASIL PEMELIHARAAN PETERNAK (RHPP)</strong></header>'+clone.innerHTML+'<footer>Dokumen pemeriksaan RHPP · Dicetak: '+esc(new Date().toLocaleString('id-ID'))+'</footer></body></html>';
 }

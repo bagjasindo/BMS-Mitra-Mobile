@@ -49,7 +49,7 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   assert.doesNotMatch(groups[0].textContent,/RT-001/);
   assert.match(groups[1].textContent,/Pembeli A.*D 1234/);
   assert.match(groups[2].textContent,/RT-001.*Pakan Starter.*1,00.*zak.*50,00/);
-  assert.match(groups[3].textContent,/Panduan Membaca Hasil Produksi/);
+  assert.match(groups[3].textContent,/Istilah: DOC = bibit/);
   w.rhppOrganizeReport(area);assert.equal(area.querySelectorAll('[data-rhpp-report-group]').length,5);
   assert.match(area.textContent,/DATA TERSEDIA · PERLU VERIFIKASI AKHIR/);
   w.document.getElementById('rhppPrint').click();
@@ -60,6 +60,8 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
     const doc=new JSDOM(html).window.document;
     assert.deepEqual([...doc.querySelectorAll('table')].map(t=>[...t.querySelectorAll('th,td')].map(c=>c.textContent)),expected);
     assert.equal(doc.querySelector('select,button,[data-rhpp-controls]'),null);
+    assert.equal(doc.querySelector('.rhpp-intro,.rhpp-feed-panel,.rhpp-group-note'),null);
+    assert.match(doc.querySelector('.rhpp-glossary').textContent,/FCR = kg pakan per kg bobot/);
     assert.deepEqual([...doc.querySelectorAll('[data-rhpp-report-group]')].map(g=>g.dataset.rhppReportGroup),['supplies','harvest','returns','production','calculation']);
     assert.match(doc.body.textContent,/HASIL AKHIR SETELAH BIAYA TAMBAHAN/);
   }

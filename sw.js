@@ -1,5 +1,5 @@
 const CACHE_PREFIX='bms-pwa-shell-';
-const CACHE_NAME=CACHE_PREFIX+'v2394-admin-performance';
+const CACHE_NAME=CACHE_PREFIX+'v2395-logistics-expedition';
 const SHELL=[
   './',
   './index.html',
@@ -10,13 +10,14 @@ const SHELL=[
   './vendor/supabase-2.57.0.js',
   './bms-data-config.js?v=2386-classic-restored',
   './bms-core.js?v=2390-mobile-edit-labels',
-  './main-2321.js?v=2394-admin-performance',
+  './main-2321.js?v=2395-logistics-expedition',
   './modules/bms-master-logistics.js?v=2386-classic-restored',
   './modules/bms-production.js?v=2390-mobile-edit-labels',
   './modules/bms-finance.js?v=2387-expedition-date-order',
   './modules/bms-inventory.js?v=2389-master-search',
   './modules/bms-performance.js?v=2394-admin-performance',
-  './modules/bms-admin.js?v=2394-admin-performance',
+  './modules/bms-expedition-reports.js?v=2395-logistics-expedition',
+  './modules/bms-admin.js?v=2395-logistics-expedition',
   './modules/bms-rhpp-users.js?v=2386-classic-restored',
   './modules/bms-dashboard-reports.js?v=2391-dashboard-feed',
   './bms-start.js?v=2386-classic-restored',

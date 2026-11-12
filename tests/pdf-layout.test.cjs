@@ -23,6 +23,9 @@ test('PDF workflow retains styled report and blocked-popup download is honestly 
     assert.ok(report.includes('.amount{color:red}'));
     assert.ok(report.includes('print-color-adjust:exact'));
     load();assert.equal(printed,1);
+    assert.ok(report.includes('@page{size:A4 portrait'));
+    await w.BMSCore.savePdfHtml(html,'RHPP.pdf',{pageSize:'landscape'});
+    assert.ok((await blob.text()).includes('@page{size:A4 landscape'));
     w.open=()=>null;
     w.document.addEventListener('click',event=>{download=event.target.download;event.preventDefault()});
     await w.BMSCore.savePdfHtml(html,'RHPP.pdf');

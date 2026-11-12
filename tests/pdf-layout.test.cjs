@@ -22,6 +22,7 @@ test('PDF workflow retains styled report and blocked-popup download is honestly 
     assert.ok(report.includes('<table><tr><td class="amount">1.234,00</td></tr></table>'));
     assert.ok(report.includes('.amount{color:red}'));
     assert.ok(report.includes('print-color-adjust:exact'));
+    assert.ok(report.includes('.rhpp-panel{break-inside:auto!important;page-break-inside:auto!important}'));
     load();assert.equal(printed,1);
     assert.ok(report.includes('@page{size:A4 portrait'));
     await w.BMSCore.savePdfHtml(html,'RHPP.pdf',{pageSize:'landscape'});

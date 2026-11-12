@@ -103,3 +103,11 @@ Tanggal DOC datang adalah **Hari 0**.
 Recording PPL **Hari 1 dimulai H+1 / sehari setelah DOC datang**.
 Tanggal recording untuk Hari N = tanggal DOC datang + N hari.
 Histori recording yang sudah tersimpan tidak boleh digeser massal hanya karena aturan ini.
+
+## RHPP — koreksi disetujui Owner 2026-11-12
+
+- DOA menjadi catatan pada RHPP baru; dasar populasi adalah DOC diterima, tanpa pengurangan DOA. Harga rata-rata DOC bersumber dari jumlah dan nilai kiriman DOC.
+- Snapshot RHPP yang sudah CLOSED dipertahankan. Saat close baru, populasi diterima dipakai sebelum snapshot pertama dibuat.
+- Rincian kiriman dan retur mencakup seluruh kategori barang, tanggal, dokumen, jumlah, satuan, kg, harga, nilai, dan catatan yang tersedia. Data yang tidak tercatat ditampilkan `-`.
+- Cetak, PDF, dan Excel Cek RHPP mengambil tabel dan nilai dari halaman pemeriksaan yang sama, tanpa menghitung laporan kedua.
+- Data tersedia tidak membuktikan panen selesai. Administrator wajib memverifikasi seluruh transaksi sebelum Deal & Close.

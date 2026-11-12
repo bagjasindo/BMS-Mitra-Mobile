@@ -16075,15 +16075,15 @@ begin
   raw as (
     select
       a.id assignment_id,a.barn_id,b.code barn_code,b.name barn_name,c.number contract_number,a.active,
-      (ci.received-ci.doa)::numeric chick_in_birds,
+      basis.birds::numeric chick_in_birds,
       coalesce(h.birds,0)::numeric total_harvest_birds,
       coalesce(h.kg,0)::numeric total_harvest_kg,
       case when coalesce(h.birds,0)>0 then h.kg/h.birds else 0 end::numeric avg_bw_kg,
       coalesce(h.weighted_age,0)::numeric weighted_age,
-      ((ci.received-ci.doa)-coalesce(h.birds,0))::numeric implied_depletion_birds,
-      ((ci.received-ci.doa)-coalesce(h.birds,0))::numeric recorded_depletion_birds,
+      (basis.birds-coalesce(h.birds,0))::numeric implied_depletion_birds,
+      (basis.birds-coalesce(h.birds,0))::numeric recorded_depletion_birds,
       0::numeric depletion_variance_birds,
-      case when (ci.received-ci.doa)>0 then (((ci.received-ci.doa)-coalesce(h.birds,0))/(ci.received-ci.doa))*100 else 0 end::numeric mortality_pct,
+      case when basis.birds>0 then ((basis.birds-coalesce(h.birds,0))/basis.birds)*100 else 0 end::numeric mortality_pct,
       greatest(0,coalesce(ms.feed_kg,0)-coalesce(mr.feed_kg,0)-coalesce(rf.feed_kg,0))::numeric main_feed_kg,
       greatest(0,coalesce(es.feed_kg,0)-coalesce(er.feed_kg,0)+coalesce(ti.feed_kg,0)+coalesce(cin.feed_kg,0)-coalesce(cout.feed_kg,0))::numeric external_feed_kg,
       greatest(0,coalesce(ms.feed_kg,0)-coalesce(mr.feed_kg,0)-coalesce(rf.feed_kg,0))::numeric net_feed_kg,
@@ -16101,6 +16101,13 @@ begin
     join public.barns b on b.id=a.barn_id
     join public.contracts c on c.id=a.master_contract_id
     join public.chick_ins ci on ci.contract_assignment_id=a.id
+    -- DOA is a note for new RHPP. Preserve the population of historical frozen RHPP.
+    cross join lateral (
+      select case when a.active then ci.received::numeric else coalesce(
+        (select f.chick_in_birds from public.rhpp_system_final f
+         where f.contract_assignment_id=a.id order by f.created_at desc limit 1),
+        ci.received::numeric) end as birds
+    ) basis
     left join harvest h on h.contract_assignment_id=a.id
     left join main_ship ms on ms.contract_assignment_id=a.id
     left join main_ret mr on mr.contract_assignment_id=a.id
@@ -16199,6 +16206,7 @@ begin
   order by br.active desc,br.barn_code;
 end
 $function$
+
 ;
 
 CREATE OR REPLACE FUNCTION public.admin_close_production_atomic(p_contract_assignment_id uuid)

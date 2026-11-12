@@ -395,6 +395,7 @@ async function financeRhppPage(options={}){
         '<tr><td>Tanggal Chick-In</td><td>'+prodDateId(ci?.arrived_on)+'</td></tr>'+
         '<tr><td>Populasi Chick-In</td><td>'+prodFmt(x.chick_in_birds,0)+' ekor</td></tr>'+
         '<tr><td>Status RHPP</td><td><strong>'+status+'</strong></td></tr>'+
+        (fin?'<tr><td>Tanggal Penutupan Periode</td><td>'+prodDateId(fin.closed_on)+'</td></tr>':'')+
       '</tbody></table></div></section>'+
       '<section class="panel rhpp-panel rhpp-wide"><div class="rhpp-section-head"><div><h3>Rincian DOC & Kontrak</h3><p class="muted">Acuan awal populasi dan biaya DOC yang sudah dipakai oleh perhitungan RHPP.</p></div></div>'+
       '<div class="tablewrap"><table><tbody>'+
@@ -457,20 +458,20 @@ async function financeRhppPage(options={}){
         '<tr><td>Tambah Daging (Kg)</td><td>'+prodFmt(meatKg,2)+'</td></tr>'+
         '<tr><td><strong>Total Performa RHPP (Ekor)</strong></td><td><strong>'+prodFmt(x.total_harvest_birds,0)+'</strong></td></tr>'+
         '<tr><td><strong>Total Performa RHPP (Kg)</strong></td><td><strong>'+prodFmt(x.total_harvest_kg,2)+'</strong></td></tr>'+
-        '<tr><td>BW Rataan</td><td>'+prodFmt(x.avg_bw_kg,3)+'</td></tr>'+
-        '<tr><td>Umur Panen</td><td>'+prodFmt(x.weighted_age,2)+'</td></tr>'+
+        '<tr><td>Bobot Rata-rata (BW, kg/ekor)</td><td>'+prodFmt(x.avg_bw_kg,3)+'</td></tr>'+
+        '<tr><td>Umur Panen (hari)</td><td>'+prodFmt(x.weighted_age,2)+'</td></tr>'+
       '</tbody></table></div></section>'+
 
       '<section class="panel rhpp-panel"><h3>Kinerja Produksi</h3><div class="tablewrap"><table><tbody>'+
         '<tr><td>Deplesi hitung (DOC dikurangi ekor performa)</td><td>'+prodFmt(x.mortality_pct,2)+'%</td></tr>'+
-        '<tr><td>Bobot Badan</td><td>'+prodFmt(x.avg_bw_kg,3)+'</td></tr>'+
+        '<tr><td>Bobot Badan (BW, kg/ekor)</td><td>'+prodFmt(x.avg_bw_kg,3)+'</td></tr>'+
         '<tr><td><strong>Pakan Kontrak Bersih · Dasar FCR</strong></td><td><strong>'+prodFmt(x.net_feed_kg,2)+'</strong></td></tr>'+
         '<tr><td>Pakan Tambahan Perusahaan · Di luar RHPP</td><td>'+prodFmt(x.external_feed_kg,2)+'</td></tr>'+
-        '<tr><td>Umur Panen</td><td>'+prodFmt(x.weighted_age,2)+'</td></tr>'+
+        '<tr><td>Umur Panen (hari)</td><td>'+prodFmt(x.weighted_age,2)+'</td></tr>'+
         '<tr><td>FCR</td><td>'+prodFmt(x.fcr_actual,3)+'</td></tr>'+
         '<tr><td>FCR Standar</td><td>'+prodFmt(x.fcr_standard,3)+'</td></tr>'+
-        '<tr><td>DIFF FCR</td><td>'+prodFmt(x.diff_fcr,3)+'</td></tr>'+
-        '<tr><td>Indeks Prestasi</td><td>'+prodFmt(x.ip,2)+'</td></tr>'+
+        '<tr><td>Selisih FCR (standar − aktual)</td><td>'+prodFmt(x.diff_fcr,3)+'</td></tr>'+
+        '<tr><td>Indeks Prestasi (IP)</td><td>'+prodFmt(x.ip,2)+'</td></tr>'+
       '</tbody></table></div></section>'+
 
       '<section class="panel rhpp-panel"><h3>Perhitungan RHPP</h3><div class="tablewrap"><table><tbody>'+
@@ -479,6 +480,7 @@ async function financeRhppPage(options={}){
         '<tr><td>DOC Utama</td><td>Rp '+prodFmt(x.main_doc_cost,0)+'</td></tr>'+
         '<tr><td>Pakan Utama</td><td>Rp '+prodFmt(x.main_feed_cost,0)+'</td></tr>'+
         '<tr><td>OVK Utama</td><td>Rp '+prodFmt(x.main_ovk_cost,0)+'</td></tr>'+
+        '<tr><td>Sapronak Lainnya Kontrak</td><td>Rp '+prodFmt(x.main_other_cost,0)+'</td></tr>'+
         '<tr><td>Retur RHPP</td><td>- Rp '+prodFmt(x.main_return_cost,0)+'</td></tr>'+
         '<tr><td><strong>Total Sapronak Kontrak RHPP</strong></td><td><strong>Rp '+prodFmt(x.sapronak_cost,0)+'</strong></td></tr>'+
         '<tr><td><strong>Total Biaya RHPP Kontrak</strong></td><td><strong>Rp '+prodFmt(x.total_rhpp_cost,0)+'</strong></td></tr>'+
@@ -487,10 +489,10 @@ async function financeRhppPage(options={}){
 
       '<section class="panel rhpp-panel"><h3>Bonus Kontrak & Nilai RHPP</h3><div class="tablewrap"><table><tbody>'+
         '<tr><td>IP Aktual</td><td>'+prodFmt(x.ip,2)+'</td></tr>'+
-        '<tr><td>DIFF FCR</td><td>'+prodFmt(x.diff_fcr,3)+'</td></tr>'+
+        '<tr><td>Selisih FCR (standar − aktual)</td><td>'+prodFmt(x.diff_fcr,3)+'</td></tr>'+
         '<tr><td>Deplesi hitung</td><td>'+prodFmt(x.mortality_pct,2)+'%</td></tr>'+
         '<tr><td>Bonus IP</td><td>Rp '+prodFmt(x.bonus_ip,0)+' ('+prodFmt(x.bonus_ip_rate,0)+'/kg)</td></tr>'+
-        '<tr><td>Bonus FC</td><td>Rp '+prodFmt(x.bonus_fc,0)+' ('+prodFmt(x.bonus_fc_rate,0)+'/kg)</td></tr>'+
+        '<tr><td>Bonus Efisiensi Pakan (FC)</td><td>Rp '+prodFmt(x.bonus_fc,0)+' ('+prodFmt(x.bonus_fc_rate,0)+'/kg)</td></tr>'+
         '<tr><td>Bonus Deplesi</td><td>Rp '+prodFmt(x.bonus_mortality,0)+' ('+prodFmt(x.bonus_mortality_rate,0)+'/kg)</td></tr>'+
         '<tr><td><strong>Nilai RHPP Kontrak</strong></td><td><strong>Rp '+prodFmt(rhppGross,0)+'</strong></td></tr>'+
         '<tr><td>RHPP / Chick-In</td><td>Rp '+prodFmt(x.profit_per_chick_in,0)+'</td></tr>'+
@@ -521,6 +523,9 @@ async function financeRhppPage(options={}){
   };
 
   const rhppExport=document.getElementById('rhppExportArea');
+  rhppOrganizeReport(rhppExport);
+  const reportRow=activeRows.find(v=>v.contract_assignment_id===selectedAssignment);
+  const reportFile='RHPP_'+(reportRow?.barn_code||'Kandang')+'_'+(chickIns.find(v=>v.contract_assignment_id===selectedAssignment)?.arrived_on||'Periode')+'_'+(options.historyAssignment?'CLOSED':'CEK');
   // Screen, print, PDF and Excel use the same rendered values; no second financial calculation.
   const rhppDocHtml=()=>rhppDocumentHtml(rhppExport,company);
   const rhppPrintOpen=(pdf=false)=>{
@@ -532,11 +537,11 @@ async function financeRhppPage(options={}){
   const pdfBtn=document.getElementById('rhppPdf');
   const excelBtn=document.getElementById('rhppExcel');
   if(printBtn)printBtn.onclick=()=>rhppPrintOpen(false);
-  if(pdfBtn)pdfBtn.onclick=()=>BMSCore.savePdfHtml(rhppDocHtml(true),'RHPP_Sistem.pdf').catch(error=>msg(error?.message||'PDF gagal dibuat.'));
+  if(pdfBtn)pdfBtn.onclick=()=>BMSCore.savePdfHtml(rhppDocHtml(true),reportFile+'.pdf',{pageSize:'landscape'}).catch(error=>msg(error?.message||'PDF gagal dibuat.'));
   if(excelBtn)excelBtn.onclick=()=>{
     const blob=BMSCore.excelBlob([rhppDocHtml()]);
     const url=URL.createObjectURL(blob),a=document.createElement('a');
-    a.href=url;a.download='RHPP_Sistem.xlsx';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    a.href=url;a.download=reportFile+'.xlsx';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
   };
 
   if(profile.role==='ADMIN')root.querySelectorAll('[data-close-rhpp]').forEach(btn=>btn.onclick=async()=>{

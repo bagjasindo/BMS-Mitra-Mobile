@@ -205,6 +205,7 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
   assert.match(await evaluate("document.querySelector('#rhppExportArea').textContent"),/RT-001.*Vitamin Uji.*botol.*20.000/);
   assert.match(await evaluate("document.querySelector('#rhppExportArea').textContent"),/DOA \(catatan\)/);
   assert.equal(await evaluate("typeof document.querySelector('#rhppPrint').onclick"),'function');
+  assert.deepEqual(await evaluate("[...document.querySelectorAll('[data-rhpp-report-group]')].map(g=>g.dataset.rhppReportGroup)"),['supplies','harvest','returns','production','calculation']);
   for(const width of [390,768,1280]){
     await command('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<901});
     assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true,'RHPP page overflows at '+width);

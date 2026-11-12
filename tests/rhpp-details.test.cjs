@@ -13,11 +13,14 @@ function setup(){
 test('Cek RHPP exposes all return categories and shares every table cell with print PDF and Excel',async()=>{
   const w=setup();
   const tables={
-    items:[{id:'doc',name:'Bounty Segar',category:'DOC',unit:'ekor'},{id:'ovk',code:'OVK01',name:'Vitamin <aman>',category:'OVK',unit:'botol'}],
+    items:[{id:'doc',name:'Bounty Segar',category:'DOC',unit:'ekor'},{id:'ovk',code:'OVK01',name:'Vitamin <aman>',category:'OVK',unit:'botol'},{id:'feed',name:'Pakan Starter',category:'PAKAN',unit:'zak'},{id:'ovk2',name:'Vaksin B',category:'OVK2',unit:'dosis'},{id:'other',name:'Sekam',category:'LAINNYA',unit:'karung'}],
     logistics_shipments:[{id:'ship',contract_assignment_id:'a',shipment_date:'2026-10-02',delivery_number:'DO-001'}],
-    logistics_shipment_items:[{shipment_id:'ship',item_id:'doc',quantity:8100,unit_price:9000}],
+    logistics_shipment_items:[{shipment_id:'ship',item_id:'doc',quantity:8100,unit_price:9000},{shipment_id:'ship',item_id:'feed',quantity:10,quantity_kg:500,unit_price:500000},{shipment_id:'ship',item_id:'ovk2',quantity:10,quantity_kg:null,unit_price:5000},{shipment_id:'ship',item_id:'other',quantity:3,quantity_kg:null,unit_price:20000}],
     logistics_returns:[{id:'ret',contract_assignment_id:'a',return_date:'2026-11-01',reference:'RT-001',notes:'Botol utuh'}],
-    logistics_return_items:[{return_id:'ret',item_id:'ovk',quantity:2,quantity_kg:null,unit_price:10000}],
+    logistics_return_items:[{return_id:'ret',item_id:'ovk',quantity:2,quantity_kg:null,unit_price:10000},{return_id:'ret',item_id:'feed',quantity:1,quantity_kg:50,unit_price:500000}],
+    logistics_external_shipments:[{id:'ext',contract_assignment_id:'a',shipment_date:'2026-10-03',reference_number:'EXT-01'}],
+    logistics_external_shipment_items:[{external_shipment_id:'ext',item_id:'feed',quantity:2,quantity_kg:100,purchase_unit_price:450000}],
+    marketing_contract_harvests:[{contract_assignment_id:'a',harvested_on:'2026-11-01',birds:6800,net_weight_kg:12001.1,buyer_name:'Pembeli A',vehicle_number:'D 1234',price_per_kg:22000,total_amount:264024200}],
     chick_ins:[{contract_assignment_id:'a',received:8100,doa:2,arrived_on:'2026-10-02'}],
     company_profile:{company_name:'BMS'},
   };
@@ -35,6 +38,19 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   const price=[...area.querySelectorAll('tr')].find(tr=>tr.textContent.includes('Harga DOC / Ekor'));
   assert.match(price.textContent,/9\.000,00/);assert.doesNotMatch(price.textContent,/9\.002/);
   assert.match(area.textContent,/RT-001.*Vitamin <aman>.*2,00.*botol.*20\.000,00.*Botol utuh/);
+  const groups=[...area.querySelectorAll('[data-rhpp-report-group]')];
+  assert.deepEqual(groups.map(g=>g.dataset.rhppReportGroup),['supplies','harvest','returns','production','calculation']);
+  const shipmentHeadings=[...groups[0].querySelectorAll('h3')].map(h=>h.textContent);
+  assert.ok(shipmentHeadings.findIndex(t=>t.startsWith('DOC —'))<shipmentHeadings.findIndex(t=>t.startsWith('Pakan —')));
+  assert.ok(shipmentHeadings.findIndex(t=>t.startsWith('Pakan —'))<shipmentHeadings.findIndex(t=>t.startsWith('OVK —')));
+  assert.match(groups[0].textContent,/Pakan Starter.*10,00.*zak.*500,00.*5\.000\.000,00/);
+  assert.match(groups[0].textContent,/Vaksin B/);assert.match(groups[0].textContent,/Sekam/);
+  assert.match(groups[0].textContent,/EXT-01/);
+  assert.doesNotMatch(groups[0].textContent,/RT-001/);
+  assert.match(groups[1].textContent,/Pembeli A.*D 1234/);
+  assert.match(groups[2].textContent,/RT-001.*Pakan Starter.*1,00.*zak.*50,00/);
+  assert.match(groups[3].textContent,/Panduan Membaca Hasil Produksi/);
+  w.rhppOrganizeReport(area);assert.equal(area.querySelectorAll('[data-rhpp-report-group]').length,5);
   assert.match(area.textContent,/DATA TERSEDIA · PERLU VERIFIKASI AKHIR/);
   w.document.getElementById('rhppPrint').click();
   await w.document.getElementById('rhppPdf').onclick();
@@ -44,6 +60,7 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
     const doc=new JSDOM(html).window.document;
     assert.deepEqual([...doc.querySelectorAll('table')].map(t=>[...t.querySelectorAll('th,td')].map(c=>c.textContent)),expected);
     assert.equal(doc.querySelector('select,button,[data-rhpp-controls]'),null);
+    assert.deepEqual([...doc.querySelectorAll('[data-rhpp-report-group]')].map(g=>g.dataset.rhppReportGroup),['supplies','harvest','returns','production','calculation']);
     assert.match(doc.body.textContent,/HASIL AKHIR SETELAH BIAYA TAMBAHAN/);
   }
   // Cetak RHPP history uses the same renderer but financial figures come from the frozen snapshot.
@@ -53,6 +70,9 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   assert.match(w.document.querySelector('#rhppExportArea').textContent,/snapshot CLOSED/);
   const finalRow=[...w.document.querySelectorAll('tr')].find(r=>r.textContent.includes('HASIL AKHIR SETELAH BIAYA TAMBAHAN'));
   assert.match(finalRow.textContent,/777\.777/);
+  assert.deepEqual([...w.document.querySelectorAll('[data-rhpp-report-group]')].map(g=>g.dataset.rhppReportGroup),['supplies','harvest','returns','production','calculation']);
+  const closedHtml=w.rhppDocumentHtml(w.document.querySelector('#rhppExportArea'),{company_name:'BMS'});
+  assert.match(new JSDOM(closedHtml).window.document.body.textContent,/777\.777/);
   assert.equal(w.document.querySelector('[data-close-rhpp]'),null);
   assert.ok(w.document.querySelector('#rhppHistoryBack'));
   // Partial reads must block finalisation and exports rather than displaying false totals.

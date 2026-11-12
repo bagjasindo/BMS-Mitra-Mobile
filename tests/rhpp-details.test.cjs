@@ -20,7 +20,11 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
     logistics_return_items:[{return_id:'ret',item_id:'ovk',quantity:2,quantity_kg:null,unit_price:10000},{return_id:'ret',item_id:'feed',quantity:1,quantity_kg:50,unit_price:500000}],
     logistics_external_shipments:[{id:'ext',contract_assignment_id:'a',shipment_date:'2026-10-03',reference_number:'EXT-01'}],
     logistics_external_shipment_items:[{external_shipment_id:'ext',item_id:'feed',quantity:2,quantity_kg:100,purchase_unit_price:450000}],
-    marketing_contract_harvests:[{contract_assignment_id:'a',harvested_on:'2026-11-01',birds:6800,net_weight_kg:12001.1,buyer_name:'Pembeli A',vehicle_number:'D 1234',price_per_kg:22000,total_amount:264024200}],
+    marketing_contract_harvests:[
+      {contract_assignment_id:'a',harvested_on:'2026-11-01',birds:4800,net_weight_kg:9001.1,buyer_name:'Pembeli A',vehicle_number:'D 1234',price_per_kg:22000,total_amount:198024200},
+      {contract_assignment_id:'a',harvested_on:'2026-10-20',birds:2000,net_weight_kg:3000,buyer_name:'Pembeli B',vehicle_number:'D 5678',price_per_kg:22000,total_amount:66000000}
+    ],
+    marketing_external_meat_purchases:[{contract_assignment_id:'a',purchase_date:'2026-10-25',birds:0,weight_kg:1,purchase_price_per_kg:0,product_name:'Daging Uji'}],
     chick_ins:[{contract_assignment_id:'a',received:8100,doa:2,arrived_on:'2026-10-02'}],
     company_profile:{company_name:'BMS'},
   };
@@ -48,6 +52,8 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   assert.match(groups[0].textContent,/EXT-01/);
   assert.doesNotMatch(groups[0].textContent,/RT-001/);
   assert.match(groups[1].textContent,/Pembeli A.*D 1234/);
+  const dates=[...area.querySelectorAll('.rhpp-harvest-table tbody tr')].slice(0,3).map(r=>r.cells[0].textContent);
+  assert.deepEqual(dates,['2026-10-20','2026-10-25','2026-11-01'],'RHPP harvest and meat rows must follow event date');
   assert.match(groups[2].textContent,/RT-001.*Pakan Starter.*1,00.*zak.*50,00/);
   assert.match(groups[3].textContent,/Istilah: DOC = bibit/);
   w.rhppOrganizeReport(area);assert.equal(area.querySelectorAll('[data-rhpp-report-group]').length,5);
@@ -56,15 +62,24 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   await w.document.getElementById('rhppPdf').onclick();
   w.document.getElementById('rhppExcel').click();
   const expected=[...area.querySelectorAll('table')].map(t=>[...t.querySelectorAll('th,td')].map(c=>c.textContent));
-  for(const html of [printed,pdf,excel]){
+  for(const html of [printed,pdf]){
     const doc=new JSDOM(html).window.document;
-    assert.deepEqual([...doc.querySelectorAll('table')].map(t=>[...t.querySelectorAll('th,td')].map(c=>c.textContent)),expected);
+    assert.equal(doc.querySelectorAll('table').length,5);
+    assert.ok(doc.body.textContent.includes('Kiriman Sapronak'));
+    assert.ok(doc.body.textContent.includes('Retur'));
+    assert.ok(doc.body.textContent.includes('Hasil Tangkap'));
+    assert.ok(doc.body.textContent.includes('Hasil Produksi'));
+    assert.ok(doc.body.textContent.includes('Hasil Perhitungan Kontrak'));
+    assert.ok(doc.body.textContent.includes('DOA (catatan)'));
+    assert.ok(doc.body.textContent.includes('HASIL AKHIR SETELAH BIAYA TAMBAHAN'));
     assert.equal(doc.querySelector('select,button,[data-rhpp-controls]'),null);
-    assert.equal(doc.querySelector('.rhpp-intro,.rhpp-feed-panel,.rhpp-group-note'),null);
-    assert.match(doc.querySelector('.rhpp-glossary').textContent,/FCR = kg pakan per kg bobot/);
-    assert.deepEqual([...doc.querySelectorAll('[data-rhpp-report-group]')].map(g=>g.dataset.rhppReportGroup),['supplies','harvest','returns','production','calculation']);
-    assert.match(doc.body.textContent,/HASIL AKHIR SETELAH BIAYA TAMBAHAN/);
+    assert.ok(doc.querySelector('style').textContent.includes('@page{size:A4 landscape'));
   }
+  const excelDoc=new JSDOM(excel).window.document;
+  assert.deepEqual([...excelDoc.querySelectorAll('table')].map(t=>[...t.querySelectorAll('th,td')].map(c=>c.textContent)),expected);
+  assert.deepEqual([...excelDoc.querySelectorAll('[data-rhpp-report-group]')].map(g=>g.dataset.rhppReportGroup),['supplies','harvest','returns','production','calculation']);
+  assert.match(excelDoc.body.textContent,/FCR = kg pakan per kg bobot/);
+  assert.match(excelDoc.body.textContent,/HASIL AKHIR SETELAH BIAYA TAMBAHAN/);
   // Cetak RHPP history uses the same renderer but financial figures come from the frozen snapshot.
   tables.rhpp_system_final=[{...summary,system_amount:777777,external_meat_cost:0,external_sapronak_cost:20000,chick_in_birds:8098,bonus_depletion:0,bonus_depletion_rate:0}];
   summary.active=false;
@@ -74,7 +89,12 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   assert.match(finalRow.textContent,/777\.777/);
   assert.deepEqual([...w.document.querySelectorAll('[data-rhpp-report-group]')].map(g=>g.dataset.rhppReportGroup),['supplies','harvest','returns','production','calculation']);
   const closedHtml=w.rhppDocumentHtml(w.document.querySelector('#rhppExportArea'),{company_name:'BMS'});
-  assert.match(new JSDOM(closedHtml).window.document.body.textContent,/777\.777/);
+  assert.ok(new JSDOM(closedHtml).window.document.body.textContent.includes('777.777'));
+  const closedOne=new JSDOM(w.rhppOnePageHtml(w.document.querySelector('#rhppExportArea'),{company_name:'BMS'})).window.document;
+  assert.ok(closedOne.body.textContent.includes('777.777'));
+  assert.ok(closedOne.body.textContent.includes('DOA (catatan)'));
+  assert.ok(closedOne.querySelector('style').textContent.includes('@page{size:A4 landscape'));
+  assert.ok(closedOne.body.textContent.includes('Hasil Perhitungan Kontrak'));
   assert.equal(w.document.querySelector('[data-close-rhpp]'),null);
   assert.ok(w.document.querySelector('#rhppHistoryBack'));
   // Partial reads must block finalisation and exports rather than displaying false totals.

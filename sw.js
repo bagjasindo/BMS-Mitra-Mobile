@@ -1,5 +1,5 @@
 const CACHE_PREFIX='bms-pwa-shell-';
-const CACHE_NAME=CACHE_PREFIX+'v2399-rhpp-one-page';
+const CACHE_NAME=CACHE_PREFIX+'v2400-rhpp-per-chick-in';
 const SHELL=[
   './',
   './index.html',
@@ -9,17 +9,17 @@ const SHELL=[
   './bms-performance.css?v=2394-admin-performance',
   './vendor/supabase-2.57.0.js',
   './bms-data-config.js?v=2386-classic-restored',
-  './bms-core.js?v=2399-rhpp-one-page',
+  './bms-core.js?v=2400-rhpp-per-chick-in',
   './main-2321.js?v=2395-logistics-expedition',
   './modules/bms-master-logistics.js?v=2386-classic-restored',
-  './modules/bms-production.js?v=2399-rhpp-one-page',
+  './modules/bms-production.js?v=2400-rhpp-per-chick-in',
   './modules/bms-finance.js?v=2387-expedition-date-order',
   './modules/bms-inventory.js?v=2389-master-search',
   './modules/bms-performance.js?v=2394-admin-performance',
   './modules/bms-expedition-reports.js?v=2395-logistics-expedition',
   './modules/bms-admin.js?v=2395-logistics-expedition',
-  './modules/bms-rhpp-details.js?v=2399-rhpp-one-page',
-  './modules/bms-rhpp-users.js?v=2399-rhpp-one-page',
+  './modules/bms-rhpp-details.js?v=2400-rhpp-per-chick-in',
+  './modules/bms-rhpp-users.js?v=2400-rhpp-per-chick-in',
   './modules/bms-dashboard-reports.js?v=2391-dashboard-feed',
   './bms-start.js?v=2386-classic-restored',
   './assets/bms_login_logo.jpg',

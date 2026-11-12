@@ -71,7 +71,7 @@ function rhppOnePageHtml(source,company={}){
   const metrics=rows(panel('Kinerja Produksi')).filter(r=>/Deplesi hitung|FCR$|FCR Standar|Selisih FCR|Indeks Prestasi|Pakan Kontrak Bersih/.test(r[0]));
   const contract=calcRows.filter(r=>/^(A\.|B\.|C\.|D\.|E\.|F\.|G\.|Hasil kontrak|Biaya DOC|Biaya pakan|Biaya OVK|Biaya sapronak|Pengurang biaya|Total biaya)/.test(r[0])).map(r=>[r[0],r.at(-1)]);
   for(const r of contract){if(/^[DEF]\./.test(r[0])){const basis=calcRows.find(v=>v[0]===r[0])?.[1]||'';const tariff=basis.match(/([\d.,]+ kg × Rp [\d.,]+\/kg)/);if(tariff)r[0]+=' · '+tariff[1];}}
-  const extras=rows(panel('Penyesuaian Biaya Perusahaan')).filter(r=>/Nilai RHPP Kontrak|Kurang:|Total Biaya Tambahan|HASIL AKHIR/.test(r[0]));
+  const extras=rows(panel('Penyesuaian Biaya Perusahaan')).filter(r=>/Nilai RHPP Kontrak|Kurang|Total Biaya Tambahan|HASIL AKHIR/.test(r[0]));
   const companyName=company.legal_name||company.company_name||'Nama perusahaan belum diisi';
   const left=card('Identitas Siklus',identity)+card('DOC & Catatan Kedatangan',doc)+card('Hasil Tangkap Ayam',harvest);
   const right=card('Hasil Produksi',performance.concat(metrics))+card('Perhitungan Kontrak',contract)+card('Potongan Perusahaan & Hasil Akhir',extras);

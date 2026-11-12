@@ -56,15 +56,21 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   await w.document.getElementById('rhppPdf').onclick();
   w.document.getElementById('rhppExcel').click();
   const expected=[...area.querySelectorAll('table')].map(t=>[...t.querySelectorAll('th,td')].map(c=>c.textContent));
-  for(const html of [printed,pdf,excel]){
+  for(const html of [printed,pdf]){
     const doc=new JSDOM(html).window.document;
-    assert.deepEqual([...doc.querySelectorAll('table')].map(t=>[...t.querySelectorAll('th,td')].map(c=>c.textContent)),expected);
-    assert.equal(doc.querySelector('select,button,[data-rhpp-controls]'),null);
-    assert.equal(doc.querySelector('.rhpp-intro,.rhpp-feed-panel,.rhpp-group-note'),null);
-    assert.match(doc.querySelector('.rhpp-glossary').textContent,/FCR = kg pakan per kg bobot/);
-    assert.deepEqual([...doc.querySelectorAll('[data-rhpp-report-group]')].map(g=>g.dataset.rhppReportGroup),['supplies','harvest','returns','production','calculation']);
+    assert.equal(doc.querySelectorAll('table').length,6);
+    assert.match(doc.body.textContent,/RHPP — Ringkasan satu lembar/);
+    assert.match(doc.body.textContent,/DOA \\(catatan\\)/);
+    assert.match(doc.body.textContent,/Perhitungan Kontrak/);
     assert.match(doc.body.textContent,/HASIL AKHIR SETELAH BIAYA TAMBAHAN/);
+    assert.equal(doc.querySelector('select,button,[data-rhpp-controls]'),null);
+    assert.match(doc.querySelector('style').textContent,/@page\\{size:A4 landscape/);
   }
+  const excelDoc=new JSDOM(excel).window.document;
+  assert.deepEqual([...excelDoc.querySelectorAll('table')].map(t=>[...t.querySelectorAll('th,td')].map(c=>c.textContent)),expected);
+  assert.deepEqual([...excelDoc.querySelectorAll('[data-rhpp-report-group]')].map(g=>g.dataset.rhppReportGroup),['supplies','harvest','returns','production','calculation']);
+  assert.match(excelDoc.body.textContent,/FCR = kg pakan per kg bobot/);
+  assert.match(excelDoc.body.textContent,/HASIL AKHIR SETELAH BIAYA TAMBAHAN/);
   // Cetak RHPP history uses the same renderer but financial figures come from the frozen snapshot.
   tables.rhpp_system_final=[{...summary,system_amount:777777,external_meat_cost:0,external_sapronak_cost:20000,chick_in_birds:8098,bonus_depletion:0,bonus_depletion_rate:0}];
   summary.active=false;

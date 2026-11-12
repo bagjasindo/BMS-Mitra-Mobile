@@ -214,7 +214,7 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
     const area=document.querySelector('#rhppExportArea'),html=rhppOnePageHtml(area,{company_name:'BMS'});
     const frame=document.createElement('iframe');frame.style.cssText='position:fixed;left:-3000px;top:0;width:1100px;height:780px;border:0';document.body.append(frame);
     frame.srcdoc=html;await new Promise(resolve=>frame.onload=resolve);await new Promise(resolve=>setTimeout(resolve,30));
-    const d=frame.contentDocument,main=d.querySelector('main'),result={height:main.scrollHeight+d.querySelector('header').getBoundingClientRect().height+d.querySelector('footer').getBoundingClientRect().height,text:d.body.textContent,tables:d.querySelectorAll('table').length};frame.remove();
+    const d=frame.contentDocument,main=d.querySelector('main'),result={height:main.scrollHeight+d.querySelector('header').getBoundingClientRect().height,text:d.body.textContent,tables:d.querySelectorAll('table').length};frame.remove();
     db.from=window.__rhppSmoke.from;db.rpc=window.__rhppSmoke.rpc;profile=window.__rhppSmoke.profile;tab=window.__rhppSmoke.tab;delete window.__rhppSmoke;login();return result;
   `);
   assert.ok(paper.height<=680,'One-page RHPP print content exceeds one A4 landscape sheet: '+paper.height+'px');

@@ -222,6 +222,7 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
   assert.ok(paper.text.includes('Rp 72.900.000,00'));
   assert.equal(paper.tables,5);
   console.log('PASS: RHPP one-sheet print fits page and retains DOC, production, contract calculation and final result');
+  await until("!!document.querySelector('#rhppExportArea')");
   await evaluate(`
     const area=document.querySelector('#rhppExportArea'),doc=new DOMParser().parseFromString(rhppDocumentHtml(area,{company_name:'BMS'}),'text/html');
     const cells=node=>[...node.querySelectorAll('th,td')].map(n=>n.textContent);

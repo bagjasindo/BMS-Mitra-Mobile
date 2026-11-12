@@ -58,13 +58,16 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   const expected=[...area.querySelectorAll('table')].map(t=>[...t.querySelectorAll('th,td')].map(c=>c.textContent));
   for(const html of [printed,pdf]){
     const doc=new JSDOM(html).window.document;
-    assert.equal(doc.querySelectorAll('table').length,6);
-    assert.match(doc.body.textContent,/RHPP — Ringkasan satu lembar/);
-    assert.match(doc.body.textContent,/DOA \\(catatan\\)/);
-    assert.match(doc.body.textContent,/Perhitungan Kontrak/);
-    assert.match(doc.body.textContent,/HASIL AKHIR SETELAH BIAYA TAMBAHAN/);
+    assert.equal(doc.querySelectorAll('table').length,5);
+    assert.ok(doc.body.textContent.includes('Kiriman Sapronak'));
+    assert.ok(doc.body.textContent.includes('Retur'));
+    assert.ok(doc.body.textContent.includes('Hasil Tangkap'));
+    assert.ok(doc.body.textContent.includes('Hasil Produksi'));
+    assert.ok(doc.body.textContent.includes('Hasil Perhitungan Kontrak'));
+    assert.ok(doc.body.textContent.includes('DOA (catatan)'));
+    assert.ok(doc.body.textContent.includes('HASIL AKHIR SETELAH BIAYA TAMBAHAN'));
     assert.equal(doc.querySelector('select,button,[data-rhpp-controls]'),null);
-    assert.match(doc.querySelector('style').textContent,/@page\\{size:A4 landscape/);
+    assert.ok(doc.querySelector('style').textContent.includes('@page{size:A4 landscape'));
   }
   const excelDoc=new JSDOM(excel).window.document;
   assert.deepEqual([...excelDoc.querySelectorAll('table')].map(t=>[...t.querySelectorAll('th,td')].map(c=>c.textContent)),expected);
@@ -82,10 +85,10 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   const closedHtml=w.rhppDocumentHtml(w.document.querySelector('#rhppExportArea'),{company_name:'BMS'});
   assert.match(new JSDOM(closedHtml).window.document.body.textContent,/777\\.777/);
   const closedOne=new JSDOM(w.rhppOnePageHtml(w.document.querySelector('#rhppExportArea'),{company_name:'BMS'})).window.document;
-  assert.match(closedOne.body.textContent,/777\\.777/);
-  assert.match(closedOne.body.textContent,/DOA \\(catatan\\)/);
-  assert.match(closedOne.querySelector('style').textContent,/@page\\{size:A4 landscape/);
-  assert.match(closedOne.body.textContent,/Perhitungan Kontrak/);
+  assert.ok(closedOne.body.textContent.includes('777.777'));
+  assert.ok(closedOne.body.textContent.includes('DOA (catatan)'));
+  assert.ok(closedOne.querySelector('style').textContent.includes('@page{size:A4 landscape'));
+  assert.ok(closedOne.body.textContent.includes('Hasil Perhitungan Kontrak'));
   assert.equal(w.document.querySelector('[data-close-rhpp]'),null);
   assert.ok(w.document.querySelector('#rhppHistoryBack'));
   // Partial reads must block finalisation and exports rather than displaying false totals.

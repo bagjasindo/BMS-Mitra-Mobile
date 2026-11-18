@@ -2386,7 +2386,7 @@ async function logisticsReturnPage(editId=null){
         return '<button type="button" class="search-suggestion" data-barn-id="'+esc(x.id)+'"><strong>'+esc(x.code+' · '+x.name)+'</strong><br><small>'+esc([x.location,k?.number,a?.performance_template_name].filter(Boolean).join(' · '))+'</small></button>';
       }).join('');
       if(q&&!rows.length)returnBarnSuggestions.innerHTML='<div class="search-empty">Kandang tidak ditemukan atau belum memiliki kontrak aktif.</div>';
-      returnBarnSuggestions.querySelectorAll('[data-barn-id]').forEach(btn=>btn.onclick=()=>{
+      returnBarnSuggestions.querySelectorAll('[data-barn-id]').forEach(btn=>btn.onclick=async()=>{
         const b=selectableBarns.find(x=>x.id===btn.dataset.barnId);
         if(!b)return;
         returnBarnSearch.value=shortBarnLabel(b);

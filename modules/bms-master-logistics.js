@@ -2407,10 +2407,11 @@ async function logisticsReturnPage(editId=null){
   const returnQtyInfo=document.getElementById('returnQtyInfo');
   const returnFeedStockInfo=document.getElementById('returnFeedStockInfo');
   let returnFeedStock=[];
+  let rerenderReturnItemSuggestions=()=>{};
   const returnStockFor=itemId=>returnFeedStock.find(x=>x.item_id===itemId);
   const refreshReturnFeedStock=async()=>{
     const assignment=activeByBarn.get(returnBarnId?.value||'');
-    if(!assignment){returnFeedStock=[];if(returnFeedStockInfo)returnFeedStockInfo.textContent='Pilih kandang untuk melihat sisa pakan sesuai recording.';updateReturnQtyContext();if(returnItemSearch?.value)renderReturnItemSuggestions();return}
+    if(!assignment){returnFeedStock=[];if(returnFeedStockInfo)returnFeedStockInfo.textContent='Pilih kandang untuk melihat sisa pakan sesuai recording.';updateReturnQtyContext();if(returnItemSearch?.value)rerenderReturnItemSuggestions();return}
     if(returnFeedStockInfo)returnFeedStockInfo.textContent='Memuat sisa pakan dari recording...';
     const {data,error}=await db.rpc('production_feed_stock',{p_contract_assignment_id:assignment.id});
     if(error){returnFeedStock=[];if(returnFeedStockInfo)returnFeedStockInfo.textContent='Sisa pakan recording tidak dapat dimuat.';msg(error.message);return}
@@ -2430,7 +2431,7 @@ async function logisticsReturnPage(editId=null){
       ?'Sisa pakan sesuai recording: '+feeds.map(x=>{const item=itemsAll.find(i=>i.id===x.item_id),unit=item?.unit||'zak',kg=Number(item?.kg_per_unit||50),remainingKg=x.remaining_kg!=null?Number(x.remaining_kg):Number(x.remaining_units||0)*kg;return (item?.name||'Pakan')+' '+fmtNumber(x.remaining_units)+' '+unit+' / '+fmtNumber(remainingKg)+' kg'}).join(' · ')
       :'Tidak ada sisa pakan tercatat sesuai recording.';
     updateReturnQtyContext();
-    if(returnItemSearch?.value)renderReturnItemSuggestions();
+    if(returnItemSearch?.value)rerenderReturnItemSuggestions();
   };
   const updateReturnQtyContext=()=>{
     if(!returnItem||!returnQtyLabel||!returnQtyInfo)return;
@@ -2464,6 +2465,7 @@ async function logisticsReturnPage(editId=null){
       });
       updateReturnQtyContext();
     };
+    rerenderReturnItemSuggestions=renderReturnItemSuggestions;
     returnItemSearch.oninput=renderReturnItemSuggestions;
     returnItemSearch.onfocus=renderReturnItemSuggestions;
   }

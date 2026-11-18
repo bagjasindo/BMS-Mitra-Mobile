@@ -226,7 +226,9 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
   assert.ok(!paper.text.includes('SP-001'),'RHPP item names should not include item codes');
   assert.ok(paper.text.includes('Rp 72.900.000,00'));
   assert.ok(paper.tables>=7);
-  assert.deepEqual(paper.harvestHeaders.slice(0,4),['Tanggal','Sumber','Nama Bakul','No Mbl']);
+  assert.deepEqual(paper.harvestHeaders.slice(0,4),['Tanggal','Umur Panen','Nama Bakul','No Mbl']);
+  assert.ok(paper.text.includes('19 hari'),'Panen age should count from chick-in date');
+  assert.ok(paper.text.includes('31 hari'),'Later harvest age should be calculated per transaction');
   assert.equal(paper.hiddenRows,0,'All harvest rows should stay visible on screen');
   assert.equal(paper.quickFilters,0,'RHPP harvest table should not be paginated');
   assert.ok(!paper.text.includes('Catatan / Status'));

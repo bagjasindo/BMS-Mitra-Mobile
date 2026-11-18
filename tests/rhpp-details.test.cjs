@@ -5,7 +5,7 @@ const {JSDOM}=require('jsdom');
 const src=f=>fs.readFileSync(require('node:path').join(__dirname,'..',f),'utf8');
 function setup(){
   const dom=new JSDOM('<div id="root"></div>',{runScripts:'outside-only'}),w=dom.window;
-  w.eval(`var RHPP_SCREEN_STYLE='<style>.rhpp-grid{display:grid}</style>';var profile={role:'ADMIN'};var root=document.getElementById('root');var prodNum=v=>Number(v)||0;var prodFmt=(v,d=0)=>v==null?'-':Number(v).toLocaleString('id-ID',{minimumFractionDigits:d,maximumFractionDigits:d});var prodDateId=v=>v||'-';var esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');var layout=html=>root.innerHTML=html;var msg=text=>window.lastMessage=text;`);
+  w.eval(`var RHPP_SCREEN_STYLE='<style>.rhpp-grid{display:grid}</style>';var profile={role:'ADMIN'};var root=document.getElementById('root');var prodNum=v=>Number(v)||0;var prodFmt=(v,d=0)=>v==null?'-':Number(v).toLocaleString('id-ID',{minimumFractionDigits:d,maximumFractionDigits:d});var prodDateId=v=>v||'-';var prodAge=(a,b)=>{const start=Date.parse(String(a).slice(0,10)+'T00:00:00Z'),end=Date.parse(String(b).slice(0,10)+'T00:00:00Z');return Number.isFinite(start)&&Number.isFinite(end)?Math.max(0,Math.floor((end-start)/86400000)):0};var esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');var layout=html=>root.innerHTML=html;var msg=text=>window.lastMessage=text;`);
   w.eval(src('modules/bms-rhpp-details.js'));
   w.eval(src('modules/bms-rhpp-users.js'));
   return w;
@@ -55,6 +55,10 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   assert.match(groups[1].textContent,/Pembeli A.*D 1234/);
   const dates=[...area.querySelectorAll('.rhpp-harvest-table tbody tr')].slice(0,3).map(r=>r.cells[0].textContent);
   assert.deepEqual(dates,['2026-10-20','2026-10-25','2026-11-01'],'RHPP harvest and meat rows must follow event date');
+  const harvestRows=[...area.querySelectorAll('.rhpp-harvest-table tbody tr')];
+  assert.equal(harvestRows[0].cells[1].textContent,'19 hari');
+  assert.equal(harvestRows[1].cells[1].textContent,'-');
+  assert.equal(harvestRows[2].cells[1].textContent,'31 hari');
   assert.match(groups[2].textContent,/RT-001.*Pakan Starter.*1,00.*zak.*50,00/);
   assert.match(groups[3].textContent,/Istilah: DOC = bibit/);
   w.rhppOrganizeReport(area);assert.equal(area.querySelectorAll('[data-rhpp-report-group]').length,5);

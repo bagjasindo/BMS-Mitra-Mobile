@@ -333,14 +333,14 @@ async function financeRhppPage(options={}){
     const actualHarvestValue=hs.reduce((s,h)=>s+prodNum(h.total_amount),0);
     const meatBirds=ms.reduce((s,m)=>s+prodNum(m.birds),0);
     const meatKg=ms.reduce((s,m)=>s+prodNum(m.weight_kg),0);
+    const ci=chickIns.find(v=>v.contract_assignment_id===x.contract_assignment_id);
     const harvestEventRows=[
-      ...hs.map(h=>({date:h.harvested_on,kind:0,row:'<tr><td class="rhpp-sticky-col">'+prodDateId(h.harvested_on)+'</td><td><strong>PANEN AKTUAL</strong></td><td>'+esc(h.buyer_name||'-')+'</td><td>'+esc(h.vehicle_number||'-')+'</td><td class="num">'+prodFmt(h.birds,0)+'</td><td class="num">'+prodFmt(h.net_weight_kg,2)+'</td><td class="num">'+prodFmt(h.avg_weight_kg,3)+'</td><td class="num">Rp '+prodFmt(h.price_per_kg,0)+'</td><td class="num rhpp-money-col">Rp '+prodFmt(h.total_amount,0)+'</td></tr>'})),
-      ...ms.map(m=>{const n=prodNum(m.birds),kg=prodNum(m.weight_kg),bw=n>0?kg/n:0,total=kg*prodNum(m.purchase_price_per_kg);return {date:m.purchase_date,kind:1,row:'<tr><td class="rhpp-sticky-col">'+prodDateId(m.purchase_date)+'</td><td><strong>TAMBAH DAGING</strong></td><td>'+esc(m.product_name||'Daging/Ayam')+'</td><td>-</td><td class="num">'+(n>0?prodFmt(n,0):'-')+'</td><td class="num">'+prodFmt(kg,2)+'</td><td class="num">'+(bw>0?prodFmt(bw,3):'-')+'</td><td class="num">Rp '+prodFmt(m.purchase_price_per_kg,0)+'</td><td class="num rhpp-money-col">Rp '+prodFmt(total,0)+'</td></tr>'};})
+      ...hs.map(h=>({date:h.harvested_on,kind:0,row:'<tr><td class="rhpp-sticky-col">'+prodDateId(h.harvested_on)+'</td><td class="num">'+(ci?.arrived_on?prodFmt(prodAge(ci.arrived_on,h.harvested_on)+1,0)+' hari':'-')+'</td><td>'+esc(h.buyer_name||'-')+'</td><td>'+esc(h.vehicle_number||'-')+'</td><td class="num">'+prodFmt(h.birds,0)+'</td><td class="num">'+prodFmt(h.net_weight_kg,2)+'</td><td class="num">'+prodFmt(h.avg_weight_kg,3)+'</td><td class="num">Rp '+prodFmt(h.price_per_kg,0)+'</td><td class="num rhpp-money-col">Rp '+prodFmt(h.total_amount,0)+'</td></tr>'})),
+      ...ms.map(m=>{const n=prodNum(m.birds),kg=prodNum(m.weight_kg),bw=n>0?kg/n:0,total=kg*prodNum(m.purchase_price_per_kg);return {date:m.purchase_date,kind:1,row:'<tr><td class="rhpp-sticky-col">'+prodDateId(m.purchase_date)+'</td><td>-</td><td>'+esc('Tambah Daging · '+(m.product_name||'Daging/Ayam'))+'</td><td>-</td><td class="num">'+(n>0?prodFmt(n,0):'-')+'</td><td class="num">'+prodFmt(kg,2)+'</td><td class="num">'+(bw>0?prodFmt(bw,3):'-')+'</td><td class="num">Rp '+prodFmt(m.purchase_price_per_kg,0)+'</td><td class="num rhpp-money-col">Rp '+prodFmt(total,0)+'</td></tr>'};})
     ].sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||a.kind-b.kind).map(v=>v.row).join('');
     const rhppGross=prodNum(x.farmer_profit);
     const companyExtraCost=prodNum(x.external_meat_cost)+prodNum(x.external_sapronak_cost);
     const companyNet=rhppGross-companyExtraCost;
-    const ci=chickIns.find(v=>v.contract_assignment_id===x.contract_assignment_id);
     const docLines=shipItems.filter(v=>ships.some(h=>h.id===v.shipment_id&&h.contract_assignment_id===x.contract_assignment_id)&&items.some(i=>i.id===v.item_id&&i.category==='DOC'));
     const docQuantity=docLines.reduce((sum,v)=>sum+prodNum(v.quantity),0);
     const effectiveDocPrice=docQuantity>0?docLines.reduce((sum,v)=>sum+prodNum(v.quantity)*prodNum(v.unit_price),0)/docQuantity:null;
@@ -420,7 +420,7 @@ async function financeRhppPage(options={}){
 
     html+='<section class="panel rhpp-panel rhpp-wide rhpp-harvest"><div class="rhpp-section-head"><div><h3>Rincian Panen</h3><p class="muted">Panen Aktual dan Tambah Daging menjadi satu sumber performa RHPP, namun tetap ditandai terpisah agar mudah diaudit.</p></div><span class="rhpp-count">'+(hs.length+ms.length)+' transaksi</span></div>'+
       '<div class="tablewrap rhpp-harvest-wrap"><table class="rhpp-harvest-table"><thead><tr>'+
-      '<th class="rhpp-sticky-col">Tanggal</th><th>Sumber</th><th>Nama Bakul</th><th>No Mbl</th><th class="num">Ekor</th><th class="num">Berat (Kg)</th><th class="num">BW</th><th class="num">Harga/Kg</th><th class="num rhpp-money-col">Nilai Produksi</th>'+
+      '<th class="rhpp-sticky-col">Tanggal</th><th>Umur Panen</th><th>Nama Bakul</th><th>No Mbl</th><th class="num">Ekor</th><th class="num">Berat (Kg)</th><th class="num">BW</th><th class="num">Harga/Kg</th><th class="num rhpp-money-col">Nilai Produksi</th>'+
       '</tr></thead><tbody>'+
       harvestEventRows+
       '<tr class="rhpp-total-row"><th colspan="4">TOTAL PANEN AKTUAL</th><th class="num">'+prodFmt(actualHarvestBirds,0)+'</th><th class="num">'+prodFmt(actualHarvestKg,2)+'</th><th class="num">'+prodFmt(actualHarvestBirds>0?actualHarvestKg/actualHarvestBirds:0,3)+'</th><th></th><th class="num">Rp '+prodFmt(actualHarvestValue,0)+'</th></tr>'+

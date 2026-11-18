@@ -64,10 +64,13 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   const expected=[...area.querySelectorAll('table')].map(t=>[...t.querySelectorAll('th,td')].map(c=>c.textContent));
   for(const html of [printed,pdf]){
     const doc=new JSDOM(html).window.document;
-    assert.equal(doc.querySelectorAll('table').length,6);
+    assert.ok(doc.querySelectorAll('table').length>=8);
     assert.ok(doc.body.textContent.includes('Kiriman Sapronak'));
     assert.ok(doc.body.textContent.includes('Retur'));
     assert.ok(doc.body.textContent.includes('Hasil Tangkap'));
+    assert.ok(doc.body.textContent.includes('Pembeli A'));
+    assert.ok(doc.body.textContent.includes('Pakan Starter'));
+    assert.ok(doc.body.textContent.includes('RT-001'));
     assert.ok(doc.body.textContent.includes('Hasil Produksi'));
     assert.ok(doc.body.textContent.includes('Hasil Perhitungan Kontrak'));
     assert.ok(doc.body.textContent.includes('Pendapatan per Ekor Chick-In'));
@@ -76,6 +79,7 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
     assert.ok(doc.body.textContent.includes('HASIL AKHIR SETELAH BIAYA TAMBAHAN'));
     assert.equal(doc.querySelector('select,button,[data-rhpp-controls]'),null);
     assert.ok(doc.querySelector('style').textContent.includes('@page{size:A4 portrait'));
+    assert.ok(!doc.querySelector('style').textContent.includes('overflow:hidden'));
     const labels=['1. Kiriman Sapronak','2. Retur','3. Hasil Tangkap','4. Hasil Produksi','5. Hasil Perhitungan Kontrak'];
     const positions=labels.map(x=>doc.body.textContent.indexOf(x));
     assert.ok(positions.every((x,i)=>x>=0&&(i===0||x>positions[i-1])),'RHPP print section order');

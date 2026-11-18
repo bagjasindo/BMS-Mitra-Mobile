@@ -58,34 +58,41 @@ function rhppContractCalculation(x){
     '</tbody></table></div><p class="muted">Bonus menggunakan total berat performa RHPP: panen aktual + tambah daging. Tarif Rp 0 berarti bonus tersebut tidak diberlakukan pada perhitungan ini; tanda - berarti tarif atau nilai tidak tercatat. Biaya pembelian tambah daging dan sapronak tambahan perusahaan dikurangkan setelah hasil kontrak (G), pada bagian Penyesuaian Biaya Perusahaan.</p></section>';
 }
 function rhppOnePageHtml(source,company={}){
-  if(!source)throw new Error('Ringkasan Cek RHPP belum tersedia.');
+  if(!source)throw new Error('Rincian Cek RHPP belum tersedia.');
   const text=n=>String(n?.textContent||'').replace(/\s+/g,' ').trim();
   const panel=title=>[...source.querySelectorAll('.rhpp-panel')].find(p=>text(p.querySelector('h3'))===title);
   const rows=p=>[...(p?.querySelectorAll('tr')||[])].map(r=>[...r.querySelectorAll('th,td')].map(text));
-  const section=(title,items)=>'<section><h2>'+title+'</h2><table><tbody>'+items.filter(r=>r&&r.length>1).map(r=>'<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td></tr>').join('')+'</tbody></table></section>';
-  const totals=group=>[...source.querySelectorAll('.rhpp-panel[data-rhpp-group="'+group+'"]')].map(p=>{
-    const title=text(p.querySelector('h3')).replace(/ · (Kontrak|Tambahan Perusahaan)$/,'');
-    const total=[...p.querySelectorAll('tfoot tr')].map(r=>[...r.querySelectorAll('th,td')].map(text).filter(Boolean).join(': ')).filter(Boolean).join(' · ');
-    return [title,total||'Tidak ada transaksi'];
-  });
+  const section=(title,content)=>'<section><h2>'+title+'</h2>'+content+'</section>';
+  const tableMarkup=p=>{
+    const table=p?.querySelector('table');if(!table)return '';
+    return '<div class="detail-block"><h3>'+esc(text(p.querySelector('h3')).replace(/ · (Kontrak|Tambahan Perusahaan)$/,''))+'</h3><table class="detail-table">'+
+      (table.querySelector('thead')?.outerHTML||'')+
+      [...table.querySelectorAll('tbody')].map(x=>x.outerHTML).join('')+
+      (table.querySelector('tfoot')?.outerHTML||'')+'</table></div>';
+  };
+  const details=group=>{
+    const panels=[...source.querySelectorAll('.rhpp-panel[data-rhpp-group="'+group+'"]')].filter(p=>!p.hasAttribute('data-rhpp-controls'));
+    return panels.map(tableMarkup).join('')||'<p class="empty">Tidak ada transaksi.</p>';
+  };
   const identity=rows(panel('Identitas Siklus'));
   const doc=rows(panel('Data DOC Diterima & Dasar Populasi'));
   const doa=doc.find(r=>r[0]==='DOA (catatan)')||[];
   const identityRows=identity.filter(r=>/^(Kandang \/ Peternak|Kontrak|Tanggal Chick-In|Populasi Chick-In)$/.test(r[0]));
   if(doa.length)identityRows.push([doa[0],String(doa[1]||'').split(' · ')[0]]);
-  const harvest=rows(panel('Rincian Hasil Tangkap / Panen Ayam')).filter(r=>r[0]?.startsWith('TOTAL')).map(r=>[r[0],r.slice(1,-1).filter(Boolean).join(' · ')]);
+  const harvestPanel=panel('Rincian Hasil Tangkap / Panen Ayam');
   const performance=rows(panel('Ringkasan Produksi')||panel('Kinerja Produksi')).filter(r=>/Total Performa RHPP \(Ekor\)|Total Performa RHPP \(Kg\)|Bobot Rata-rata|Umur Panen/.test(r[0]));
   const metrics=rows(panel('Kinerja Produksi')).filter(r=>/Deplesi hitung|^FCR$|FCR Standar|Selisih FCR|Indeks Prestasi|Pakan Kontrak Bersih/.test(r[0]));
   const calcRows=rows(panel('Rincian Perhitungan Kontrak'));
   const contract=calcRows.filter(r=>/^(A\.|B\.|C\.|D\.|E\.|F\.|G\.)/.test(r[0])||r[0]==='Hasil kontrak per DOC masuk').map(r=>[r[0]==='Hasil kontrak per DOC masuk'?'Pendapatan per Ekor Chick-In':r[0],r.at(-1)]);
   const extras=rows(panel('Penyesuaian Biaya Perusahaan')).filter(r=>/Kurang|Total Biaya Tambahan|HASIL AKHIR/.test(r[0]));
+  const keyTable=items=>'<table class="summary-table"><tbody>'+items.filter(r=>r&&r.length>1).map(r=>'<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td></tr>').join('')+'</tbody></table>';
   const companyName=company.legal_name||company.company_name||'Nama perusahaan belum diisi';
-  const supplies=section('1. Kiriman Sapronak',totals('supplies'));
-  const returns=section('2. Retur',totals('returns'));
-  const harvestSection=section('3. Hasil Tangkap',harvest);
-  const production=section('4. Hasil Produksi',performance.concat(metrics));
-  const calculation=section('5. Hasil Perhitungan Kontrak',contract.concat(extras));
-  return '<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Rekap RHPP</title><style>@page{size:A4 portrait;margin:6mm}*{box-sizing:border-box}html,body{margin:0;padding:0;font:8.5pt Arial,Helvetica,sans-serif;color:#17212a}header{border-bottom:1.5pt solid #17627e;padding:0 0 5px;margin-bottom:6px}header h1{font-size:12pt;margin:0 0 2px}header strong{font-size:10pt;color:#145b76}header p{margin:3px 0;color:#4b5963}.identity{width:100%;border-collapse:collapse;margin-top:5px}.identity td{border:1px solid #cbd4da;padding:3px 5px}.identity td:first-child{width:34%;font-weight:600}.identity td:last-child{text-align:left}main{display:block}section{margin:0 0 6px;break-inside:avoid;page-break-inside:avoid}h2{font-size:9.5pt;color:#145b76;border-bottom:1px solid #17627e;margin:6px 0 2px;padding:2px 0;break-after:avoid}table{width:100%;border-collapse:collapse;table-layout:fixed}section td{border-bottom:1px solid #d7dfe4;padding:2.5px 5px;vertical-align:top;overflow-wrap:anywhere;line-height:1.15}section td:first-child{width:46%;font-weight:600}section td:last-child{text-align:right}body{font:8.5pt Arial,Helvetica,sans-serif!important;max-height:270mm;overflow:hidden}</style></head><body><header><h1>'+esc(companyName)+'</h1><strong>REKAP HASIL PEMELIHARAAN PETERNAK (RHPP)</strong><p>Ringkasan satu lembar</p><table class="identity"><tbody>'+identityRows.map(r=>'<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td></tr>').join('')+'</tbody></table></header><main>'+supplies+returns+harvestSection+production+calculation+'</main></body></html>';
+  const shipment=section('1. Kiriman Sapronak',details('supplies'));
+  const returns=section('2. Retur',details('returns'));
+  const harvest=section('3. Hasil Tangkap',tableMarkup(harvestPanel)||'<p class="empty">Belum ada data tangkap.</p>');
+  const production=section('4. Hasil Produksi',keyTable(performance.concat(metrics)));
+  const calculation=section('5. Hasil Perhitungan Kontrak',keyTable(contract.concat(extras)));
+  return '<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Rekap RHPP</title><style>@page{size:A4 portrait;margin:4.5mm}*{box-sizing:border-box}html,body{margin:0;padding:0;font:7.7pt Arial,Helvetica,sans-serif;color:#17212a}header{border-bottom:1.5pt solid #17627e;padding:0 0 3px;margin-bottom:4px}header h1{font-size:12pt;margin:0 0 2px}header strong{font-size:10pt;color:#145b76}header p{margin:3px 0;color:#4b5963}.identity{width:100%;border-collapse:collapse;margin-top:5px}.identity td{border:1px solid #cbd4da;padding:2px 4px}.identity td:first-child{width:34%;font-weight:600}.identity td:last-child{text-align:left}main{display:block}section{margin:0 0 4px;break-inside:auto;page-break-inside:auto}h2{font-size:9.5pt;color:#145b76;border-bottom:1px solid #17627e;margin:4px 0 2px;padding:1px 0;break-after:avoid}h3{font-size:8pt;color:#283943;margin:2px 0 1px;break-after:avoid}table{width:100%;border-collapse:collapse;table-layout:fixed}.summary-table td{border-bottom:1px solid #d7dfe4;padding:1.7px 4px;vertical-align:top;overflow-wrap:anywhere;line-height:1.05}.summary-table td:first-child{width:46%;font-weight:600}.summary-table td:last-child{text-align:right}.detail-block{margin:1px 0 3px;break-inside:auto;page-break-inside:auto}.detail-table{font-size:6.3pt;table-layout:fixed}.detail-table th,.detail-table td{border:1px solid #cbd4da;padding:1px 2px;vertical-align:top;overflow-wrap:anywhere;line-height:1.0}.detail-table th{background:#eef4f6;text-align:left;font-size:6pt}.detail-table thead{display:table-header-group}.detail-table tr{break-inside:avoid;page-break-inside:avoid}.detail-table .rhpp-total-row th,.detail-table .rhpp-total-row td{font-weight:700;background:#f3f7f8}.empty{margin:2px 0;color:#596872}body{font:7.7pt Arial,Helvetica,sans-serif!important}</style></head><body><header><h1>'+esc(companyName)+'</h1><strong>REKAP HASIL PEMELIHARAAN PETERNAK (RHPP)</strong><p>Periode dan nilai mengikuti Cek RHPP / catatan final saat ditutup.</p><table class="identity"><tbody>'+identityRows.map(r=>'<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td></tr>').join('')+'</tbody></table></header><main>'+shipment+returns+harvest+production+calculation+'</main></body></html>';
 }
 function rhppOrganizeReport(source){
   if(!source||source.dataset.rhppOrganized)return;

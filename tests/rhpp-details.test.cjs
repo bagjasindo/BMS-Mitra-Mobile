@@ -139,3 +139,18 @@ test('DOA population correction retains closed snapshot fallback and existing ac
  assert.match(sql,/p.user_id=auth.uid\(\)/);
  assert.doesNotMatch(sql,/update public\./i);
 });
+
+test('Liga ABK per-kandang calculates equal-weight RHPP averages across complete ABKs',()=>{
+ const dom=new JSDOM('',{runScripts:'outside-only'}),w=dom.window;
+ w.eval(`var prodNum=v=>Number(v)||0`);
+ w.eval(src('modules/bms-production.js'));
+ const rows=[
+  {totalPopulation:1000,birds:900,perBird:10000,ip:400,fcr:1.5,bw:2,profit:9000000},
+  {totalPopulation:2000,birds:1600,perBird:20000,ip:500,fcr:2,bw:2.5,profit:32000000}
+ ];
+ assert.deepEqual(JSON.parse(JSON.stringify(w.leagueAbkAverageRows(rows))),{
+  abks:2,population:1500,birds:1250,perBird:15000,ip:450,fcr:1.75,bw:2.25,profit:20500000
+ });
+ assert.equal(w.leagueAbkAverageRows([]),null);
+ dom.window.close();
+});

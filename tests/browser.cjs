@@ -214,13 +214,16 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
     const area=document.querySelector('#rhppExportArea'),html=rhppOnePageHtml(area,{company_name:'BMS'});
     const frame=document.createElement('iframe');frame.style.cssText='position:fixed;left:-3000px;top:0;width:800px;height:1150px;border:0';document.body.append(frame);
     frame.srcdoc=html;await new Promise(resolve=>frame.onload=resolve);await new Promise(resolve=>setTimeout(resolve,30));
-    const d=frame.contentDocument,main=d.querySelector('main'),result={height:main.scrollHeight+d.querySelector('header').getBoundingClientRect().height,text:d.body.textContent,tables:d.querySelectorAll('table').length};frame.remove();
+    const d=frame.contentDocument,main=d.querySelector('main'),result={height:main.scrollHeight+d.querySelector('header').getBoundingClientRect().height,text:d.body.textContent,tables:d.querySelectorAll('table').length,bodyFont:parseFloat(getComputedStyle(d.body).fontSize),tableFont:parseFloat(getComputedStyle(d.querySelector('.detail-table')).fontSize),style:d.querySelector('style').textContent};frame.remove();
     return result;
   `);
-  assert.ok(paper.height<=1032,'Sample RHPP print should fit one A4 sheet: '+paper.height+'px');
+  assert.ok(paper.bodyFont>=11,'RHPP print body text should remain readable: '+paper.bodyFont+'px');
+  assert.ok(paper.tableFont>=9.5,'RHPP transaction details should remain readable: '+paper.tableFont+'px');
+  assert.ok(!paper.style.includes('overflow:hidden'),'RHPP details must not be clipped');
   assert.ok(paper.text.includes('3. Hasil Tangkap'));
   assert.ok(paper.text.includes('Pembeli Uji'));
   assert.ok(paper.text.includes('Pakan Starter'));
+  assert.ok(!paper.text.includes('SP-001'),'RHPP item names should not include item codes');
   assert.ok(paper.text.includes('Rp 72.900.000,00'));
   assert.ok(paper.tables>=7);
   console.log('PASS: RHPP print includes harvest and feed transaction details');

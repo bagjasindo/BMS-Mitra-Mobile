@@ -1,5 +1,5 @@
 const CACHE_PREFIX='bms-pwa-shell-';
-const CACHE_NAME=CACHE_PREFIX+'v2402-rhpp-transaction-details';
+const CACHE_NAME=CACHE_PREFIX+'v2403-rhpp-readable-print';
 const SHELL=[
   './',
   './index.html',
@@ -18,7 +18,7 @@ const SHELL=[
   './modules/bms-performance.js?v=2394-admin-performance',
   './modules/bms-expedition-reports.js?v=2395-logistics-expedition',
   './modules/bms-admin.js?v=2395-logistics-expedition',
-  './modules/bms-rhpp-details.js?v=2402-rhpp-transaction-details',
+  './modules/bms-rhpp-details.js?v=2403-rhpp-readable-print',
   './modules/bms-rhpp-users.js?v=2402-rhpp-transaction-details',
   './modules/bms-dashboard-reports.js?v=2391-dashboard-feed',
   './bms-start.js?v=2386-classic-restored',

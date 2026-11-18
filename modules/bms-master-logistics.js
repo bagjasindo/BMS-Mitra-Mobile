@@ -2305,6 +2305,7 @@ async function logisticsReturnPage(editId=null){
       '<label>Cari / Pilih Sapronak<input id="returnItemSearch" autocomplete="off" placeholder="Ketik kode atau nama sapronak"></label>'+
       '<input type="hidden" id="returnItem">'+
       '<div id="returnItemSuggestions" class="search-suggestions"></div>'+
+      '<p id="returnFeedStockInfo" class="muted">Pilih kandang untuk melihat sisa pakan sesuai recording.</p>'+
       '<label id="returnQtyLabel">Jumlah Retur<input id="returnQty" data-number="1" inputmode="decimal"></label>'+
       '<p id="returnQtyInfo" class="muted"></p>'+
       '<button type="button" id="addReturnItem">Tambah Retur</button>'+
@@ -2391,6 +2392,7 @@ async function logisticsReturnPage(editId=null){
         returnBarnSearch.value=shortBarnLabel(b);
         returnBarnId.value=b.id;
         returnBarnSuggestions.innerHTML='';
+        await refreshReturnFeedStock();
       });
     };
     returnBarnSearch.oninput=renderReturnBarnSuggestions;
@@ -2403,6 +2405,33 @@ async function logisticsReturnPage(editId=null){
   const returnQty=document.getElementById('returnQty');
   const returnQtyLabel=document.getElementById('returnQtyLabel');
   const returnQtyInfo=document.getElementById('returnQtyInfo');
+  const returnFeedStockInfo=document.getElementById('returnFeedStockInfo');
+  let returnFeedStock=[];
+  const returnStockFor=itemId=>returnFeedStock.find(x=>x.item_id===itemId);
+  const refreshReturnFeedStock=async()=>{
+    const assignment=activeByBarn.get(returnBarnId?.value||'');
+    if(!assignment){returnFeedStock=[];if(returnFeedStockInfo)returnFeedStockInfo.textContent='Pilih kandang untuk melihat sisa pakan sesuai recording.';updateReturnQtyContext();if(returnItemSearch?.value)renderReturnItemSuggestions();return}
+    if(returnFeedStockInfo)returnFeedStockInfo.textContent='Memuat sisa pakan dari recording...';
+    const {data,error}=await db.rpc('production_feed_stock',{p_contract_assignment_id:assignment.id});
+    if(error){returnFeedStock=[];if(returnFeedStockInfo)returnFeedStockInfo.textContent='Sisa pakan recording tidak dapat dimuat.';msg(error.message);return}
+    returnFeedStock=(data||[]).map(x=>({...x}));
+    if(selected){
+      returnItems.filter(x=>x.return_id===selected.id).forEach(x=>{
+        const item=itemsAll.find(i=>i.id===x.item_id);
+        let stock=returnStockFor(x.item_id);
+        if(!stock){stock={item_id:x.item_id,remaining_units:0,remaining_kg:0};returnFeedStock.push(stock)}
+        const kgPerUnit=Number(item?.kg_per_unit||50),qty=Number(x.quantity||0);
+        stock.remaining_units=Number(stock.remaining_units||0)+qty;
+        stock.remaining_kg=Number(stock.remaining_kg!=null?stock.remaining_kg:0)+qty*kgPerUnit;
+      });
+    }
+    const feeds=returnFeedStock.filter(x=>itemsAll.find(i=>i.id===x.item_id)?.category==='PAKAN'&&Number(x.remaining_units||0)>0);
+    if(returnFeedStockInfo)returnFeedStockInfo.textContent=feeds.length
+      ?'Sisa pakan sesuai recording: '+feeds.map(x=>{const item=itemsAll.find(i=>i.id===x.item_id),unit=item?.unit||'zak',kg=Number(item?.kg_per_unit||50),remainingKg=x.remaining_kg!=null?Number(x.remaining_kg):Number(x.remaining_units||0)*kg;return (item?.name||'Pakan')+' '+fmtNumber(x.remaining_units)+' '+unit+' / '+fmtNumber(remainingKg)+' kg'}).join(' · ')
+      :'Tidak ada sisa pakan tercatat sesuai recording.';
+    updateReturnQtyContext();
+    if(returnItemSearch?.value)renderReturnItemSuggestions();
+  };
   const updateReturnQtyContext=()=>{
     if(!returnItem||!returnQtyLabel||!returnQtyInfo)return;
     const item=itemsAll.find(x=>x.id===returnItem.value);
@@ -2413,8 +2442,9 @@ async function logisticsReturnPage(editId=null){
     }
     returnQtyLabel.firstChild.textContent='Jumlah Retur ('+(item.unit||'-')+')';
     if(item.category==='PAKAN'){
-      const kg=Number(item.kg_per_unit||50);
-      returnQtyInfo.textContent='Pakan: 1 '+(item.unit||'ZAK')+' = '+fmtNumber(kg)+' kg. Total kg dihitung otomatis.';
+      const kg=Number(item.kg_per_unit||50),stock=returnStockFor(item.id);
+      const remaining=Number(stock?.remaining_units||0),remainingKg=stock?.remaining_kg!=null?Number(stock.remaining_kg):remaining*kg;
+      returnQtyInfo.textContent='Pakan: 1 '+(item.unit||'ZAK')+' = '+fmtNumber(kg)+' kg · Sisa sesuai recording: '+fmtNumber(remaining)+' '+(item.unit||'ZAK')+' / '+fmtNumber(remainingKg)+' kg.';
     }else returnQtyInfo.textContent='Satuan retur: '+(item.unit||'-');
   };
   if(returnItemSearch&&returnItemSuggestions&&returnItem){
@@ -2422,7 +2452,7 @@ async function logisticsReturnPage(editId=null){
       const q=(returnItemSearch.value||'').trim().toLowerCase();
       returnItem.value='';
       const rows=q?itemsAll.filter(x=>[x.code,x.name,x.category,x.unit].filter(Boolean).join(' ').toLowerCase().includes(q)).slice(0,5):[];
-      returnItemSuggestions.innerHTML=rows.map(x=>'<button type="button" class="search-suggestion" data-return-item="'+esc(x.id)+'"><strong>'+esc(x.code+' · '+x.name)+'</strong><br><small>'+esc([x.category,x.unit].filter(Boolean).join(' · '))+'</small></button>').join('');
+      returnItemSuggestions.innerHTML=rows.map(x=>{const st=returnStockFor(x.id),detail=x.category==='PAKAN'?' · Sisa recording '+fmtNumber(st?.remaining_units||0)+' '+(x.unit||'ZAK')+' / '+fmtNumber(st?.remaining_kg!=null?st.remaining_kg:Number(st?.remaining_units||0)*Number(x.kg_per_unit||50))+' kg':'';return '<button type="button" class="search-suggestion" data-return-item="'+esc(x.id)+'"><strong>'+esc(x.code+' · '+x.name)+'</strong><br><small>'+esc([x.category,x.unit].filter(Boolean).join(' · ')+detail)+'</small></button>'}).join('');
       if(q&&!rows.length)returnItemSuggestions.innerHTML='<div class="search-empty">Sapronak tidak ditemukan.</div>';
       returnItemSuggestions.querySelectorAll('[data-return-item]').forEach(btn=>btn.onclick=()=>{
         const item=itemsAll.find(x=>x.id===btn.dataset.returnItem);
@@ -2438,6 +2468,7 @@ async function logisticsReturnPage(editId=null){
     returnItemSearch.onfocus=renderReturnItemSuggestions;
   }
   updateReturnQtyContext();
+  if(selected&&!locked)refreshReturnFeedStock();
 
   const renderDraft=()=>{
     const body=document.getElementById('returnDraftBody'); if(!body)return;

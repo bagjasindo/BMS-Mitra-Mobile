@@ -2265,17 +2265,19 @@ async function logisticsExternalReturnPage(editId=null){
 }
 
 async function logisticsReturnPage(editId=null){
-  const [br,ir,rr,rir,ar,kr,cpr]=await Promise.all([
+  const [br,ir,rr,rir,ar,kr,cpr,sr,sir]=await Promise.all([
     db.from('barns').select('id,code,name,location,kind,active').eq('active',true).order('code',{ascending:true}),
     db.from('items').select('id,code,name,category,unit,kg_per_unit,active').eq('active',true).order('code',{ascending:true}),
     db.from('logistics_returns').select('*').order('return_date',{ascending:false}).order('created_at',{ascending:false}),
     db.from('logistics_return_items').select('*').order('created_at',{ascending:false}),
     db.from('logistics_contract_assignments').select('id,barn_id,master_contract_id,performance_template_name,active,created_at,cycle_type').order('created_at',{ascending:false}),
     db.from('contracts').select('id,number').is('cycle_id',null),
-    db.from('company_profile').select('company_name,legal_name,logo_url,address,phone,email').eq('id',true).maybeSingle()
+    db.from('company_profile').select('company_name,legal_name,logo_url,address,phone,email').eq('id',true).maybeSingle(),
+    db.from('logistics_shipments').select('id,contract_assignment_id'),
+    db.from('logistics_shipment_items').select('shipment_id,item_id,quantity,quantity_kg')
   ]);
 
-  const barns=br.data||[], itemsAll=ir.data||[], returns=rr.data||[], returnItems=rir.data||[], assignments=ar.data||[], masters=kr.data||[], company=cpr.data||{};
+  const barns=br.data||[], itemsAll=ir.data||[], returns=rr.data||[], returnItems=rir.data||[], assignments=ar.data||[], masters=kr.data||[], company=cpr.data||{}, shipments=sr.data||[], shipmentItems=sir.data||[];
   const txnReturn=txnListState(returns,'logisticsReturn','return_date',5,barns),shownReturns=txnReturn.rows;
   const activeAssignments=assignments.filter(a=>a.active&&(a.cycle_type||'MITRA')==='MITRA');
   const activeByBarn=new Map(activeAssignments.map(a=>[a.barn_id,a]));
@@ -2302,7 +2304,7 @@ async function logisticsReturnPage(editId=null){
 
   if(!locked){
     html+='<div class="form-vertical compact-form">'+
-      '<label>Cari / Pilih Sapronak<input id="returnItemSearch" autocomplete="off" placeholder="Ketik kode atau nama sapronak"></label>'+
+      '<label>Cari / Pilih Sapronak<input id="returnItemSearch" autocomplete="off" placeholder="Pilih sapronak yang pernah dikirim ke kandang ini"></label>'+
       '<input type="hidden" id="returnItem">'+
       '<div id="returnItemSuggestions" class="search-suggestions"></div>'+
       '<p id="returnFeedStockInfo" class="muted">Pilih kandang untuk melihat sisa pakan sesuai recording.</p>'+
@@ -2392,6 +2394,8 @@ async function logisticsReturnPage(editId=null){
         returnBarnSearch.value=shortBarnLabel(b);
         returnBarnId.value=b.id;
         returnBarnSuggestions.innerHTML='';
+        if(returnItemSearch)returnItemSearch.value='';
+        if(returnItem)returnItem.value='';
         await refreshReturnFeedStock();
       });
     };
@@ -2409,8 +2413,27 @@ async function logisticsReturnPage(editId=null){
   let returnFeedStock=[];
   let rerenderReturnItemSuggestions=()=>{};
   const returnStockFor=itemId=>returnFeedStock.find(x=>x.item_id===itemId);
+  const selectedReturnAssignment=()=>activeByBarn.get(returnBarnId?.value||'');
+  const returnShipmentRows=assignmentId=>shipmentItems.filter(line=>shipments.some(sh=>sh.id===line.shipment_id&&sh.contract_assignment_id===assignmentId));
+  const shippedQuantity=(assignmentId,itemId)=>returnShipmentRows(assignmentId).filter(line=>line.item_id===itemId).reduce((sum,line)=>sum+Number(line.quantity||0),0);
+  const returnedQuantity=(assignmentId,itemId)=>returns.filter(r=>r.contract_assignment_id===assignmentId).reduce((sum,r)=>sum+returnItems.filter(line=>line.return_id===r.id&&line.item_id===itemId).reduce((n,line)=>n+Number(line.quantity||0),0),0);
+  const currentEditedReturnQuantity=itemId=>selected?returnItems.filter(line=>line.return_id===selected.id&&line.item_id===itemId).reduce((sum,line)=>sum+Number(line.quantity||0),0):0;
+  const availableReturnItems=()=>{
+    const assignment=selectedReturnAssignment();
+    if(!assignment)return [];
+    const itemIds=[...new Set(returnShipmentRows(assignment.id).map(line=>line.item_id))];
+    return itemIds.map(itemId=>{
+      const item=itemsAll.find(x=>x.id===itemId);
+      if(!item)return null;
+      const sent=shippedQuantity(assignment.id,itemId),returned=returnedQuantity(assignment.id,itemId),stock=returnStockFor(itemId);
+      const remaining=item.category==='PAKAN'?Number(stock?.remaining_units||0):Math.max(0,sent-returned+currentEditedReturnQuantity(itemId));
+      const kgPerUnit=Number(item.kg_per_unit||50);
+      const remainingKg=item.category==='PAKAN'?(stock?.remaining_kg!=null?Number(stock.remaining_kg):remaining*kgPerUnit):0;
+      return {...item,sent_quantity:sent,remaining_quantity:remaining,remaining_kg:remainingKg};
+    }).filter(Boolean);
+  };
   const refreshReturnFeedStock=async()=>{
-    const assignment=activeByBarn.get(returnBarnId?.value||'');
+    const assignment=selectedReturnAssignment();
     if(!assignment){returnFeedStock=[];if(returnFeedStockInfo)returnFeedStockInfo.textContent='Pilih kandang untuk melihat sisa pakan sesuai recording.';updateReturnQtyContext();if(returnItemSearch?.value)rerenderReturnItemSuggestions();return}
     if(returnFeedStockInfo)returnFeedStockInfo.textContent='Memuat sisa pakan dari recording...';
     const {data,error}=await db.rpc('production_feed_stock',{p_contract_assignment_id:assignment.id});
@@ -2452,9 +2475,9 @@ async function logisticsReturnPage(editId=null){
     const renderReturnItemSuggestions=()=>{
       const q=(returnItemSearch.value||'').trim().toLowerCase();
       returnItem.value='';
-      const rows=q?itemsAll.filter(x=>[x.code,x.name,x.category,x.unit].filter(Boolean).join(' ').toLowerCase().includes(q)).slice(0,5):[];
-      returnItemSuggestions.innerHTML=rows.map(x=>{const st=returnStockFor(x.id),detail=x.category==='PAKAN'?' · Sisa recording '+fmtNumber(st?.remaining_units||0)+' '+(x.unit||'ZAK')+' / '+fmtNumber(st?.remaining_kg!=null?st.remaining_kg:Number(st?.remaining_units||0)*Number(x.kg_per_unit||50))+' kg':'';return '<button type="button" class="search-suggestion" data-return-item="'+esc(x.id)+'"><strong>'+esc(x.code+' · '+x.name)+'</strong><br><small>'+esc([x.category,x.unit].filter(Boolean).join(' · ')+detail)+'</small></button>'}).join('');
-      if(q&&!rows.length)returnItemSuggestions.innerHTML='<div class="search-empty">Sapronak tidak ditemukan.</div>';
+      const rows=availableReturnItems().filter(x=>!q||[x.code,x.name,x.category,x.unit].filter(Boolean).join(' ').toLowerCase().includes(q));
+      returnItemSuggestions.innerHTML=rows.map(x=>'<button type="button" class="search-suggestion" data-return-item="'+esc(x.id)+'"><strong>'+esc(x.code+' · '+x.name)+'</strong><br><small>'+esc([x.category,x.unit,'sisa '+fmtNumber(x.remaining_quantity)+' '+(x.unit||'satuan')].filter(Boolean).join(' · ')+(x.category==='PAKAN'?' / '+fmtNumber(x.remaining_kg)+' kg':''))+'</small></button>').join('');
+      if(!rows.length)returnItemSuggestions.innerHTML='<div class="search-empty">'+(selectedReturnAssignment()?'Belum ada barang yang dikirim ke kandang ini.':'Pilih kandang untuk melihat barang yang dikirim.')+'</div>';
       returnItemSuggestions.querySelectorAll('[data-return-item]').forEach(btn=>btn.onclick=()=>{
         const item=itemsAll.find(x=>x.id===btn.dataset.returnItem);
         if(!item)return;
@@ -2549,7 +2572,7 @@ async function logisticsReturnPage(editId=null){
     await logisticsReturnPage();
     msg('Draft retur dihapus.',true);
   });
-  const err=br.error||ir.error||rr.error||rir.error||ar.error||kr.error||cpr.error;
+  const err=br.error||ir.error||rr.error||rir.error||ar.error||kr.error||cpr.error||sr.error||sir.error;
   if(err)msg(err.message);
 }
 

@@ -14,8 +14,7 @@ function rhppLogisticsDetails(assignment,data){
       const amount=known(v.quantity)&&known(price)?Number(v.quantity)*Number(price):null;
       const origin=external&&isReturn?extShips.find(s=>s.id===h.external_shipment_id):null;
       const reference=[h.delivery_number,h.shipping_note_number,h.reference_number,h.reference].filter(Boolean).join(' / ');
-      const note=[h.status,h.notes,origin?'Asal: '+(origin.reference_number||'-'):null].filter(Boolean).join(' · ');
-      return {date:h.shipment_date||h.return_date,amount,quantity:v.quantity,unit:item?.unit,kg:v.quantity_kg,html:'<tr><td>'+prodDateId(h.shipment_date||h.return_date)+'</td><td>'+esc(reference||'-')+'</td><td>'+esc(item?.name||'Barang tidak dikenal')</td><td class="num">'+number(v.quantity)+'</td><td>'+esc(item?.unit||'-')+'</td><td class="num">'+number(v.quantity_kg)+'</td><td class="num">'+money(price)+'</td><td class="num">'+money(amount)+'</td><td>'+esc(note||'-')+'</td></tr>'};
+      return {date:h.shipment_date||h.return_date,amount,quantity:v.quantity,unit:item?.unit,kg:v.quantity_kg,html:'<tr><td>'+prodDateId(h.shipment_date||h.return_date)+'</td><td>'+esc(reference||'-')+'</td><td>'+esc(item?.name||'Barang tidak dikenal')+'</td><td class="num">'+number(v.quantity)+'</td><td>'+esc(item?.unit||'-')+'</td><td class="num">'+number(v.quantity_kg)+'</td><td class="num">'+money(price)+'</td><td class="num">'+money(amount)+'</td></tr>'};
     }).filter(Boolean)).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
     if(!rows.length&&external)return '';
     if(!rows.length&&(category==='LAINNYA'||(isReturn&&category!=='PAKAN')))return '';
@@ -24,7 +23,7 @@ function rhppLogisticsDetails(assignment,data){
     for(const row of rows){if(row.unit&&known(row.quantity))units.set(row.unit,(units.get(row.unit)||0)+Number(row.quantity));}
     const totalKg=rows.length&&rows.every(r=>known(r.kg))?rows.reduce((sum,r)=>sum+Number(r.kg),0):null;
     const quantitySummary=[...units].map(([unit,qty])=>number(qty)+' '+esc(unit)).join(' · ');
-    return '<section data-rhpp-group="'+(isReturn?'returns':'supplies')+'" class="panel rhpp-panel rhpp-wide"><h3>'+title+'</h3><p class="muted">'+(external?'Tambahan perusahaan, terpisah dari sapronak kontrak.':'Sumber transaksi logistik kontrak.')+' Harga mengikuti satuan barang pada transaksi. Tanda - berarti data tidak tercatat.</p><div class="tablewrap"><table class="rhpp-detail-table"><thead><tr><th>Tanggal</th><th>No. dokumen</th><th>Barang / Kategori</th><th>Jumlah</th><th>Satuan</th><th>Kg</th><th>Harga / Satuan</th><th>Nilai</th><th>Catatan / Status</th></tr></thead><tbody>'+ (rows.length?rows.map(r=>r.html).join(''):'<tr><td colspan="9">Tidak ada transaksi.</td></tr>')+'</tbody>'+(rows.length?'<tfoot><tr><th colspan="7">Total nilai '+(isReturn?'retur':'kiriman')+'</th><th class="num">'+money(total)+'</th><th></th></tr>'+(category==='PAKAN'?'<tr><th colspan="9">Total jumlah: '+(quantitySummary||'-')+' · Total berat: '+number(totalKg)+' kg</th></tr>':'')+'</tfoot>':'')+'</table></div></section>';
+    return '<section data-rhpp-group="'+(isReturn?'returns':'supplies')+'" class="panel rhpp-panel rhpp-wide"><h3>'+title+'</h3><p class="muted">'+(external?'Tambahan perusahaan, terpisah dari sapronak kontrak.':'Sumber transaksi logistik kontrak.')+' Harga mengikuti satuan barang pada transaksi. Tanda - berarti data tidak tercatat.</p><div class="tablewrap"><table class="rhpp-detail-table"><thead><tr><th>Tanggal</th><th>No. dokumen</th><th>Barang / Kategori</th><th>Jumlah</th><th>Satuan</th><th>Kg</th><th>Harga / Satuan</th><th>Nilai</th></tr></thead><tbody>'+ (rows.length?rows.map(r=>r.html).join(''):'<tr><td colspan="8">Tidak ada transaksi.</td></tr>')+'</tbody>'+(rows.length?'<tfoot><tr><th colspan="7">Total nilai '+(isReturn?'retur':'kiriman')+'</th><th class="num">'+money(total)+'</th></tr>'+(category==='PAKAN'?'<tr><th colspan="8">Total jumlah: '+(quantitySummary||'-')+' · Total berat: '+number(totalKg)+' kg</th></tr>':'')+'</tfoot>':'')+'</table></div></section>';
   };
   const held=retained.filter(r=>r.source_assignment_id===assignment);
   const heldHtml=held.length?'<section data-rhpp-group="returns" class="panel rhpp-panel rhpp-wide"><h3>Pakan Ditahan Perusahaan</h3><p>Dicatat terpisah dari retur supplier. Tidak dijumlahkan ulang sebagai retur kontrak.</p><div class="tablewrap"><table><thead><tr><th>Dokumen retur</th><th>Barang</th><th>Jumlah</th><th>Satuan</th><th>Harga</th><th>Nilai</th></tr></thead><tbody>'+held.map(r=>{const i=items.find(i=>i.id===r.item_id),h=returns.find(h=>h.id===r.return_id);return '<tr><td>'+esc(h?.reference||'-')+'</td><td>'+esc(i?.name||'-')+'</td><td>'+number(r.quantity)+'</td><td>'+esc(i?.unit||'-')+'</td><td>'+money(r.unit_price)+'</td><td>'+money(known(r.quantity)&&known(r.unit_price)?Number(r.quantity)*Number(r.unit_price):null)+'</td></tr>';}).join('')+'</tbody></table></div></section>':'';
@@ -65,10 +64,12 @@ function rhppOnePageHtml(source,company={}){
   const section=(title,content)=>'<section><h2>'+title+'</h2>'+content+'</section>';
   const tableMarkup=p=>{
     const table=p?.querySelector('table');if(!table)return '';
+    const copy=table.cloneNode(true);
+    copy.querySelectorAll('tr').forEach(row=>{row.hidden=false;row.style.removeProperty('display');});
     return '<div class="detail-block"><h3>'+esc(text(p.querySelector('h3')).replace(/ · (Kontrak|Tambahan Perusahaan)$/,''))+'</h3><table class="detail-table">'+
-      (table.querySelector('thead')?.outerHTML||'')+
-      [...table.querySelectorAll('tbody')].map(x=>x.outerHTML).join('')+
-      (table.querySelector('tfoot')?.outerHTML||'')+'</table></div>';
+      (copy.querySelector('thead')?.outerHTML||'')+
+      [...copy.querySelectorAll('tbody')].map(x=>x.outerHTML).join('')+
+      (copy.querySelector('tfoot')?.outerHTML||'')+'</table></div>';
   };
   const details=group=>{
     const panels=[...source.querySelectorAll('.rhpp-panel[data-rhpp-group="'+group+'"]')].filter(p=>!p.hasAttribute('data-rhpp-controls'));

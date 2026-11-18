@@ -1,5 +1,5 @@
 const CACHE_PREFIX='bms-pwa-shell-';
-const CACHE_NAME=CACHE_PREFIX+'v2404-rhpp-all-harvest-rows';
+const CACHE_NAME=CACHE_PREFIX+'v2405-return-stock-by-barn';
 const SHELL=[
   './',
   './index.html',
@@ -11,7 +11,7 @@ const SHELL=[
   './bms-data-config.js?v=2386-classic-restored',
   './bms-core.js?v=2402-rhpp-transaction-details',
   './main-2321.js?v=2404-rhpp-all-harvest-rows',
-  './modules/bms-master-logistics.js?v=2386-classic-restored',
+  './modules/bms-master-logistics.js?v=2405-return-stock-by-barn',
   './modules/bms-production.js?v=2402-rhpp-transaction-details',
   './modules/bms-finance.js?v=2387-expedition-date-order',
   './modules/bms-inventory.js?v=2389-master-search',

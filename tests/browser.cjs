@@ -197,7 +197,7 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
   console.log('PASS: Logistics expedition report navigation, filters, distinct units, export bindings and restricted finance access');
   await evaluate(`
     window.__rhppSmoke={from:db.from,rpc:db.rpc,profile,tab};profile={role:'ADMIN',full_name:'Uji RHPP'};tab='keuangan_rhpp';
-    const tables={items:[{id:'d',name:'Bounty',category:'DOC',unit:'ekor'},{id:'f',name:'Pakan Starter',category:'PAKAN',unit:'zak'},{id:'v',name:'Vitamin Uji',category:'OVK',unit:'botol'}],logistics_shipments:[{id:'s',contract_assignment_id:'a',shipment_date:'2026-10-02',delivery_number:'DO-001'}],logistics_shipment_items:[{shipment_id:'s',item_id:'d',quantity:8100,unit_price:9000},{shipment_id:'s',item_id:'f',quantity:10,quantity_kg:500,unit_price:500000}],marketing_contract_harvests:[{id:'h',contract_assignment_id:'a',harvested_on:'2026-11-01',birds:6800,net_weight_kg:12001.1,avg_weight_kg:1.765,price_per_kg:22000,total_amount:264024200,buyer_name:'Pembeli Uji',vehicle_number:'D 1234'}],logistics_returns:[{id:'r',contract_assignment_id:'a',return_date:'2026-11-01',reference:'RT-001'}],logistics_return_items:[{return_id:'r',item_id:'v',quantity:2,unit_price:10000}],chick_ins:[{contract_assignment_id:'a',received:8100,doa:2}],company_profile:{company_name:'BMS'}};
+    const tables={items:[{id:'d',name:'Bounty',category:'DOC',unit:'ekor'},{id:'f',name:'Pakan Starter',category:'PAKAN',unit:'zak'},{id:'v',name:'Vitamin Uji',category:'OVK',unit:'botol'}],logistics_shipments:[{id:'s',contract_assignment_id:'a',shipment_date:'2026-10-02',delivery_number:'DO-001'}],logistics_shipment_items:[{shipment_id:'s',item_id:'d',quantity:8100,unit_price:9000},{shipment_id:'s',item_id:'f',quantity:10,quantity_kg:500,unit_price:500000}],marketing_contract_harvests:[{id:'h',contract_assignment_id:'a',harvested_on:'2026-11-01',birds:6800,net_weight_kg:12001.1,avg_weight_kg:1.765,price_per_kg:22000,total_amount:264024200,buyer_name:'Pembeli Uji',vehicle_number:'D 1234'}],logistics_returns:[{id:'r',contract_assignment_id:'a',return_date:'2026-11-01',reference:'RT-001'}],logistics_return_items:[{return_id:'r',item_id:'v',quantity:2,unit_price:10000}],chick_ins:[{contract_assignment_id:'a',received:8100,doa:2,arrived_on:'2026-10-14'}],company_profile:{company_name:'BMS'}};
     db.from=name=>{const q={select:()=>q,order:()=>q,eq:()=>q,maybeSingle:()=>q,then:resolve=>Promise.resolve({data:tables[name]||[]}).then(resolve)};return q};
     db.rpc=async()=>({data:[{contract_assignment_id:'a',active:true,barn_code:'KD-004',barn_name:'Randegan',chick_in_birds:8100,main_doc_cost:72900000,total_harvest_birds:6800,total_harvest_kg:12001.1,net_feed_kg:18200,sapronak_cost:100000000,farmer_profit:1234567}]});
     window.__financeRhppState={assignment:'a'};await financeRhppPage();
@@ -227,7 +227,7 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
   assert.ok(paper.text.includes('Rp 72.900.000,00'));
   assert.ok(paper.tables>=7);
   assert.deepEqual(paper.harvestHeaders.slice(0,4),['Tanggal','Umur Panen','Nama Bakul','No Mbl']);
-  assert.deepEqual(paper.printAgeCells,['19 hari','-','31 hari'],'Print must preserve each row age');
+  assert.deepEqual(paper.printAgeCells,['19 hari'],'Print must show the actual harvest age');
   assert.equal(paper.hiddenRows,0,'All harvest rows should stay visible on screen');
   assert.equal(paper.quickFilters,0,'RHPP harvest table should not be paginated');
   assert.ok(!paper.text.includes('Catatan / Status'));

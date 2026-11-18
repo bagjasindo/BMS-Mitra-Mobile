@@ -78,7 +78,7 @@ if('serviceWorker' in navigator){
     location.reload();
   });
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js?v=2404-rhpp-all-harvest-rows',{scope:'./'}).then(reg=>{
+    navigator.serviceWorker.register('./sw.js?v=2405-return-stock-by-barn',{scope:'./'}).then(reg=>{
       reg.update().catch(()=>{});
       if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});
       reg.addEventListener('updatefound',()=>{

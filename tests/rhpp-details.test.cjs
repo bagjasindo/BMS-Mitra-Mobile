@@ -41,7 +41,8 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   assert.match(area.textContent,/DOA \(catatan\).*2 ekor/);
   const price=[...area.querySelectorAll('tr')].find(tr=>tr.textContent.includes('Harga DOC / Ekor'));
   assert.match(price.textContent,/9\.000,00/);assert.doesNotMatch(price.textContent,/9\.002/);
-  assert.match(area.textContent,/RT-001.*Vitamin <aman>.*2,00.*botol.*20\.000,00.*Botol utuh/);
+  assert.match(area.textContent,/RT-001.*Vitamin <aman>.*2,00.*botol.*20\.000,00/);
+  assert.doesNotMatch(area.textContent,/Catatan \/ Status|Botol utuh/);
   const groups=[...area.querySelectorAll('[data-rhpp-report-group]')];
   assert.deepEqual(groups.map(g=>g.dataset.rhppReportGroup),['supplies','harvest','returns','production','calculation']);
   const shipmentHeadings=[...groups[0].querySelectorAll('h3')].map(h=>h.textContent);

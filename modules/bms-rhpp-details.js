@@ -62,7 +62,7 @@ function rhppOnePageHtml(source,company={}){
   const text=n=>String(n?.textContent||'').replace(/\s+/g,' ').trim();
   const panel=title=>[...source.querySelectorAll('.rhpp-panel')].find(p=>text(p.querySelector('h3'))===title);
   const rows=p=>[...(p?.querySelectorAll('tr')||[])].map(r=>[...r.querySelectorAll('th,td')].map(text));
-  const card=(title,items)=>'<section><h3>'+title+'</h3><table><tbody>'+items.filter(r=>r&&r.length>1).map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>').join('')+'</tbody></table></section>';
+  const section=(title,items)=>'<section><h2>'+title+'</h2><table><tbody>'+items.filter(r=>r&&r.length>1).map(r=>'<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td></tr>').join('')+'</tbody></table></section>';
   const totals=group=>[...source.querySelectorAll('.rhpp-panel[data-rhpp-group="'+group+'"]')].map(p=>{
     const title=text(p.querySelector('h3')).replace(/ · (Kontrak|Tambahan Perusahaan)$/,'');
     const total=[...p.querySelectorAll('tfoot tr')].map(r=>[...r.querySelectorAll('th,td')].map(text).filter(Boolean).join(': ')).filter(Boolean).join(' · ');
@@ -71,6 +71,8 @@ function rhppOnePageHtml(source,company={}){
   const identity=rows(panel('Identitas Siklus'));
   const doc=rows(panel('Data DOC Diterima & Dasar Populasi'));
   const doa=doc.find(r=>r[0]==='DOA (catatan)')||[];
+  const identityRows=identity.filter(r=>/^(Kandang \/ Peternak|Kontrak|Tanggal Chick-In|Populasi Chick-In)$/.test(r[0]));
+  if(doa.length)identityRows.push([doa[0],String(doa[1]||'').split(' · ')[0]]);
   const harvest=rows(panel('Rincian Hasil Tangkap / Panen Ayam')).filter(r=>r[0]?.startsWith('TOTAL')).map(r=>[r[0],r.slice(1,-1).filter(Boolean).join(' · ')]);
   const performance=rows(panel('Ringkasan Produksi')||panel('Kinerja Produksi')).filter(r=>/Total Performa RHPP \(Ekor\)|Total Performa RHPP \(Kg\)|Bobot Rata-rata|Umur Panen/.test(r[0]));
   const metrics=rows(panel('Kinerja Produksi')).filter(r=>/Deplesi hitung|^FCR$|FCR Standar|Selisih FCR|Indeks Prestasi|Pakan Kontrak Bersih/.test(r[0]));
@@ -78,15 +80,12 @@ function rhppOnePageHtml(source,company={}){
   const contract=calcRows.filter(r=>/^(A\.|B\.|C\.|D\.|E\.|F\.|G\.)/.test(r[0])||r[0]==='Hasil kontrak per DOC masuk').map(r=>[r[0]==='Hasil kontrak per DOC masuk'?'Pendapatan per Ekor Chick-In':r[0],r.at(-1)]);
   const extras=rows(panel('Penyesuaian Biaya Perusahaan')).filter(r=>/Kurang|Total Biaya Tambahan|HASIL AKHIR/.test(r[0]));
   const companyName=company.legal_name||company.company_name||'Nama perusahaan belum diisi';
-  const barn=text(identity.find(r=>r[0]==='Kandang / Peternak')?.[1]||null)||'-';
-  const period=text(identity.find(r=>r[0]==='Tanggal Chick-In')?.[1]||null)||'-';
-  const population=text(identity.find(r=>r[0]==='Populasi Chick-In')?.[1]||null)||'-';
-  const feed=card('Kiriman Sapronak',totals('supplies'));
-  const returns=card('Retur',totals('returns'));
-  const harvestCard=card('Hasil Tangkap',harvest);
-  const production=card('Hasil Produksi',performance.concat(metrics));
-  const calculation=card('Hasil Perhitungan Kontrak',contract.concat(extras));
-  return '<!doctype html><html lang="id"><head><meta charset="utf-8"><title>RHPP Ringkasan 1 Lembar</title><style>@page{size:A4 landscape;margin:6mm}*{box-sizing:border-box}html,body{margin:0;padding:0;font:8pt Arial,Helvetica,sans-serif;color:#15212b}header{border-bottom:1.5pt solid #17627e;padding:0 0 4px;margin-bottom:6px}header h1{font-size:12pt;margin:0 0 3px}header p{margin:2px 0;color:#4b5963}.content{display:grid;grid-template-columns:1fr 1fr;gap:8px}section{border:.6pt solid #b8c6ce;border-radius:3px;margin:0 0 6px;padding:5px;break-inside:avoid;page-break-inside:avoid}h3{font-size:9pt;color:#145b76;margin:0 0 4px}table{width:100%;border-collapse:collapse;table-layout:fixed}td{border-top:.35pt solid #d7dfe4;padding:2.5px 3px;vertical-align:top;overflow-wrap:anywhere;line-height:1.2}td:first-child{width:48%;font-weight:600}td:last-child{text-align:right}body{font:8pt Arial,Helvetica,sans-serif!important;max-height:180mm;overflow:hidden}.doa{font-size:7pt}</style></head><body><header><h1>'+esc(companyName)+' · RHPP</h1><p>Ringkasan satu lembar · <strong>'+esc(barn)+'</strong> · Periode '+esc(period)+' · Populasi '+esc(population)+'</p><p class="doa">'+(doa.length?esc(doa[0]+': '+doa.slice(1).join(' ')):'')+'</p></header><main class="content"><div>'+feed+returns+harvestCard+'</div><div>'+production+calculation+'</div></main></body></html>';
+  const supplies=section('1. Kiriman Sapronak',totals('supplies'));
+  const returns=section('2. Retur',totals('returns'));
+  const harvestSection=section('3. Hasil Tangkap',harvest);
+  const production=section('4. Hasil Produksi',performance.concat(metrics));
+  const calculation=section('5. Hasil Perhitungan Kontrak',contract.concat(extras));
+  return '<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Rekap RHPP</title><style>@page{size:A4 portrait;margin:6mm}*{box-sizing:border-box}html,body{margin:0;padding:0;font:8.5pt Arial,Helvetica,sans-serif;color:#17212a}header{border-bottom:1.5pt solid #17627e;padding:0 0 5px;margin-bottom:6px}header h1{font-size:12pt;margin:0 0 2px}header strong{font-size:10pt;color:#145b76}header p{margin:3px 0;color:#4b5963}.identity{width:100%;border-collapse:collapse;margin-top:5px}.identity td{border:1px solid #cbd4da;padding:3px 5px}.identity td:first-child{width:34%;font-weight:600}.identity td:last-child{text-align:left}main{display:block}section{margin:0 0 6px;break-inside:avoid;page-break-inside:avoid}h2{font-size:9.5pt;color:#145b76;border-bottom:1px solid #17627e;margin:6px 0 2px;padding:2px 0;break-after:avoid}table{width:100%;border-collapse:collapse;table-layout:fixed}section td{border-bottom:1px solid #d7dfe4;padding:2.5px 5px;vertical-align:top;overflow-wrap:anywhere;line-height:1.15}section td:first-child{width:46%;font-weight:600}section td:last-child{text-align:right}body{font:8.5pt Arial,Helvetica,sans-serif!important;max-height:270mm;overflow:hidden}</style></head><body><header><h1>'+esc(companyName)+'</h1><strong>REKAP HASIL PEMELIHARAAN PETERNAK (RHPP)</strong><p>Ringkasan satu lembar</p><table class="identity"><tbody>'+identityRows.map(r=>'<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td></tr>').join('')+'</tbody></table></header><main>'+supplies+returns+harvestSection+production+calculation+'</main></body></html>';
 }
 function rhppOrganizeReport(source){
   if(!source||source.dataset.rhppOrganized)return;

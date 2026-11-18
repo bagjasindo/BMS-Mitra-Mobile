@@ -64,7 +64,7 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   const expected=[...area.querySelectorAll('table')].map(t=>[...t.querySelectorAll('th,td')].map(c=>c.textContent));
   for(const html of [printed,pdf]){
     const doc=new JSDOM(html).window.document;
-    assert.equal(doc.querySelectorAll('table').length,5);
+    assert.equal(doc.querySelectorAll('table').length,6);
     assert.ok(doc.body.textContent.includes('Kiriman Sapronak'));
     assert.ok(doc.body.textContent.includes('Retur'));
     assert.ok(doc.body.textContent.includes('Hasil Tangkap'));
@@ -75,7 +75,10 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
     assert.ok(doc.body.textContent.includes('DOA (catatan)'));
     assert.ok(doc.body.textContent.includes('HASIL AKHIR SETELAH BIAYA TAMBAHAN'));
     assert.equal(doc.querySelector('select,button,[data-rhpp-controls]'),null);
-    assert.ok(doc.querySelector('style').textContent.includes('@page{size:A4 landscape'));
+    assert.ok(doc.querySelector('style').textContent.includes('@page{size:A4 portrait'));
+    const labels=['1. Kiriman Sapronak','2. Retur','3. Hasil Tangkap','4. Hasil Produksi','5. Hasil Perhitungan Kontrak'];
+    const positions=labels.map(x=>doc.body.textContent.indexOf(x));
+    assert.ok(positions.every((x,i)=>x>=0&&(i===0||x>positions[i-1])),'RHPP print section order');
   }
   const excelDoc=new JSDOM(excel).window.document;
   assert.deepEqual([...excelDoc.querySelectorAll('table')].map(t=>[...t.querySelectorAll('th,td')].map(c=>c.textContent)),expected);
@@ -95,7 +98,7 @@ test('Cek RHPP exposes all return categories and shares every table cell with pr
   const closedOne=new JSDOM(w.rhppOnePageHtml(w.document.querySelector('#rhppExportArea'),{company_name:'BMS'})).window.document;
   assert.ok(closedOne.body.textContent.includes('777.777'));
   assert.ok(closedOne.body.textContent.includes('DOA (catatan)'));
-  assert.ok(closedOne.querySelector('style').textContent.includes('@page{size:A4 landscape'));
+  assert.ok(closedOne.querySelector('style').textContent.includes('@page{size:A4 portrait'));
   assert.ok(closedOne.body.textContent.includes('Hasil Perhitungan Kontrak'));
   assert.equal(w.document.querySelector('[data-close-rhpp]'),null);
   assert.ok(w.document.querySelector('#rhppHistoryBack'));

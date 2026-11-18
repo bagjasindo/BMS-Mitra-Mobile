@@ -1258,6 +1258,22 @@ async function resetKlasemenAbkPage(){
   };
 }
 
+function leagueAbkAverageRows(rows){
+  const count=Array.isArray(rows)?rows.length:0;
+  if(!count)return null;
+  const avg=key=>rows.reduce((sum,row)=>sum+prodNum(row[key]),0)/count;
+  return {
+    abks:count,
+    population:avg('totalPopulation'),
+    birds:avg('birds'),
+    perBird:avg('perBird'),
+    ip:avg('ip'),
+    fcr:avg('fcr'),
+    bw:avg('bw'),
+    profit:avg('profit')
+  };
+}
+
 async function leagueByBarnViewPage(){
   const d=await productionBase({includeRhppCosts:false});
   const leagueSetting=await loadAbkLeagueSetting();
@@ -1386,6 +1402,7 @@ async function leagueByBarnViewPage(){
     x.score=hi('perBird')*.50+lo('fcr')*.30+hi('ip')*.20;
   });
   league.sort((a,b)=>b.score-a.score);
+  const leagueMean=leagueAbkAverageRows(league);
 
   const selectedBarn=d.barns.find(b=>b.id===st.barn);
   const selectedAssignment=d.assignments.find(a=>a.id===st.assignment);
@@ -1403,6 +1420,15 @@ async function leagueByBarnViewPage(){
   if(st.assignment){
     html+='<section class="panel"><div class="owner-section-title"><div><h3>Liga ABK · '+esc(selectedBarn?shortBarnLabel(selectedBarn):'-')+' · '+esc(assignmentCycleLabel(d.assignments,selectedAssignment))+'</h3>'+
       '<p class="muted">'+(selectedAssignment?.active?'Status PROSES · ranking sementara dari data Liga ABK yang sudah masuk':'Status CLOSED · hasil final')+' · Pendapatan/Ekor 50% · FCR 30% · IP 20%</p></div><span class="owner-trophy">🏆</span></div>'+
+      (leagueMean?'<section class="owner-estimate-card"><h4>Rataan RHPP Semua ABK</h4><p class="muted">Rataan per ABK pada siklus terpilih, berdasarkan '+prodFmt(leagueMean.abks,0)+' ABK dengan data lengkap.</p><div class="owner-metrics">'+
+        '<div><span>Populasi / ABK</span><b>'+prodFmt(leagueMean.population,0)+' ekor</b></div>'+
+        '<div><span>Panen / ABK</span><b>'+prodFmt(leagueMean.birds,0)+' ekor</b></div>'+
+        '<div><span>Pendapatan / Ekor</span><b>Rp '+prodFmt(leagueMean.perBird,0)+'</b></div>'+
+        '<div><span>Laba / ABK</span><b>Rp '+prodFmt(leagueMean.profit,0)+'</b></div>'+
+        '<div><span>IP Rata-rata</span><b>'+prodFmt(leagueMean.ip,2)+'</b></div>'+
+        '<div><span>FCR Rata-rata</span><b>'+prodFmt(leagueMean.fcr,3)+'</b></div>'+
+        '<div><span>BW Rata-rata</span><b>'+prodFmt(leagueMean.bw,3)+' kg</b></div>'+
+      '</div></section>':'')+
       '<div class="report-actions"><button type="button" id="leagueBarnPrint">Cetak</button> <button type="button" id="leagueBarnPdf">PDF</button> <button type="button" id="leagueBarnExcel">Excel</button></div><div class="tablewrap"><table id="leagueBarnTable" class="owner-table"><thead><tr><th>Peringkat</th><th>ABK</th><th class="num">Siklus</th><th class="num">Total Populasi</th><th class="num">Total Ekor Panen</th><th class="num">Pendapatan/Ekor</th><th class="num">IP</th><th class="num">FCR</th><th class="num">BW</th></tr></thead><tbody>'+
       league.map((x,i)=>{
         const e=d.abks.find(v=>v.id===x.abk_id);

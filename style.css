@@ -635,6 +635,7 @@ tbody tr:hover td{background:#fafcfd!important}
 .rhpp-count{display:inline-flex;align-items:center;white-space:nowrap;padding:5px 9px;border-radius:999px;background:rgba(22,184,210,.10);border:1px solid rgba(22,184,210,.22);color:var(--bms-accent);font-size:11px;font-weight:700}
 .rhpp-harvest-wrap{border:1px solid rgba(148,163,184,.22);border-radius:8px}
 .rhpp-harvest-table th{white-space:nowrap}
+.rhpp-harvest-table .rhpp-age-col{width:82px;min-width:82px;max-width:82px;text-align:center!important;white-space:nowrap}
 .rhpp-harvest-table .num{text-align:right}
 .rhpp-harvest-table .rhpp-money-col{font-weight:700}
 .rhpp-harvest-table tbody tr:hover td{background:rgba(15,23,42,.025)}

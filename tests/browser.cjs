@@ -212,15 +212,15 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
   }
   const paper=await evaluate(`
     const area=document.querySelector('#rhppExportArea'),html=rhppOnePageHtml(area,{company_name:'BMS'});
-    const frame=document.createElement('iframe');frame.style.cssText='position:fixed;left:-3000px;top:0;width:1100px;height:780px;border:0';document.body.append(frame);
+    const frame=document.createElement('iframe');frame.style.cssText='position:fixed;left:-3000px;top:0;width:800px;height:1150px;border:0';document.body.append(frame);
     frame.srcdoc=html;await new Promise(resolve=>frame.onload=resolve);await new Promise(resolve=>setTimeout(resolve,30));
     const d=frame.contentDocument,main=d.querySelector('main'),result={height:main.scrollHeight+d.querySelector('header').getBoundingClientRect().height,text:d.body.textContent,tables:d.querySelectorAll('table').length};frame.remove();
     return result;
   `);
-  assert.ok(paper.height<=680,'One-page RHPP print content exceeds one A4 landscape sheet: '+paper.height+'px');
+  assert.ok(paper.height<=1032,'One-page RHPP print content exceeds one A4 portrait sheet: '+paper.height+'px');
   assert.ok(paper.text.includes('Ringkasan satu lembar'));
   assert.ok(paper.text.includes('Rp 72.900.000,00'));
-  assert.equal(paper.tables,5);
+  assert.equal(paper.tables,6);
   console.log('PASS: RHPP one-sheet print fits page and retains DOC, production, contract calculation and final result');
   await evaluate(`
     const area=document.querySelector('#rhppExportArea'),doc=new DOMParser().parseFromString(rhppDocumentHtml(area,{company_name:'BMS'}),'text/html');

@@ -1258,19 +1258,23 @@ async function resetKlasemenAbkPage(){
   };
 }
 
-function leagueAbkAverageRows(rows){
-  const count=Array.isArray(rows)?rows.length:0;
-  if(!count)return null;
-  const avg=key=>rows.reduce((sum,row)=>sum+prodNum(row[key]),0)/count;
+function leagueAbkCombinedRhpp(rows){
+  const complete=Array.isArray(rows)?rows:[];
+  if(!complete.length)return null;
+  const sum=key=>complete.reduce((total,row)=>total+prodNum(row[key]),0);
+  const population=sum('totalPopulation');
+  const birds=sum('birds');
+  const kg=sum('kg');
+  const feed=sum('feed');
+  const age=birds?complete.reduce((total,row)=>total+prodNum(row.age)*prodNum(row.birds),0)/birds:0;
+  const bw=birds?kg/birds:0;
+  const fcr=kg?feed/kg:0;
+  const survival=population?Math.min(100,birds/population*100):0;
+  const ip=population&&age&&fcr?(survival*bw*100)/(age*fcr):0;
+  const profit=sum('profit');
   return {
-    abks:count,
-    population:avg('totalPopulation'),
-    birds:avg('birds'),
-    perBird:avg('perBird'),
-    ip:avg('ip'),
-    fcr:avg('fcr'),
-    bw:avg('bw'),
-    profit:avg('profit')
+    abks:complete.length,population,birds,kg,feed,age,bw,fcr,ip,profit,
+    perChick:population?profit/population:0
   };
 }
 
@@ -1355,7 +1359,7 @@ async function leagueByBarnViewPage(){
     const fcrBonus=fcrDiff>0?kg*matchBonus('FCR_DIFFERENCE',fcrDiff):0;
     const profit=revenue-sapronakCost+ipBonus+fcrBonus;
     const perBird=birds?profit/birds:0;
-    return {...x,a,birds,kg,bw,feed,fcr,ip,initial,profit,perBird,complete:!!link?.basics_locked_at&&initial>0&&birds>0&&kg>0&&feed>0};
+    return {...x,a,birds,kg,bw,feed,fcr,ip,age,initial,profit,perBird,complete:!!link?.basics_locked_at&&initial>0&&birds>0&&kg>0&&feed>0};
   };
 
   const calculated=rows.map(calcResult);
@@ -1375,7 +1379,7 @@ async function leagueByBarnViewPage(){
   ):[];
   const map=new Map();
   scoped.forEach(x=>{
-    if(!map.has(x.abk_id))map.set(x.abk_id,{...x,birds:0,kg:0,feed:0,profit:0,ipWeighted:0,totalPopulation:0,periods:0});
+    if(!map.has(x.abk_id))map.set(x.abk_id,{...x,birds:0,kg:0,feed:0,profit:0,ipWeighted:0,ageWeighted:0,totalPopulation:0,periods:0});
     const g=map.get(x.abk_id);
     g.birds+=prodNum(x.birds);
     g.kg+=prodNum(x.kg);
@@ -1383,6 +1387,7 @@ async function leagueByBarnViewPage(){
     g.profit+=prodNum(x.profit);
     g.totalPopulation+=prodNum(x.initial);
     g.ipWeighted+=prodNum(x.ip)*prodNum(x.birds);
+    g.ageWeighted+=prodNum(x.age)*prodNum(x.birds);
     g.periods+=1;
     g.a=x.a;
   });
@@ -1391,6 +1396,7 @@ async function leagueByBarnViewPage(){
     bw:g.birds?g.kg/g.birds:0,
     fcr:g.kg?g.feed/g.kg:0,
     ip:g.birds?g.ipWeighted/g.birds:0,
+    age:g.birds?g.ageWeighted/g.birds:0,
     perBird:g.birds?g.profit/g.birds:0
   })).filter(g=>d.abks.find(e=>e.id===g.abk_id)?.active!==false);
 
@@ -1402,7 +1408,7 @@ async function leagueByBarnViewPage(){
     x.score=hi('perBird')*.50+lo('fcr')*.30+hi('ip')*.20;
   });
   league.sort((a,b)=>b.score-a.score);
-  const leagueMean=leagueAbkAverageRows(league);
+  const combinedRhpp=leagueAbkCombinedRhpp(league);
 
   const selectedBarn=d.barns.find(b=>b.id===st.barn);
   const selectedAssignment=d.assignments.find(a=>a.id===st.assignment);
@@ -1420,14 +1426,15 @@ async function leagueByBarnViewPage(){
   if(st.assignment){
     html+='<section class="panel"><div class="owner-section-title"><div><h3>Liga ABK · '+esc(selectedBarn?shortBarnLabel(selectedBarn):'-')+' · '+esc(assignmentCycleLabel(d.assignments,selectedAssignment))+'</h3>'+
       '<p class="muted">'+(selectedAssignment?.active?'Status PROSES · ranking sementara dari data Liga ABK yang sudah masuk':'Status CLOSED · hasil final')+' · Pendapatan/Ekor 50% · FCR 30% · IP 20%</p></div><span class="owner-trophy">🏆</span></div>'+
-      (leagueMean?'<section class="owner-estimate-card"><h4>Rataan RHPP Semua ABK</h4><p class="muted">Rataan per ABK pada siklus terpilih, berdasarkan '+prodFmt(leagueMean.abks,0)+' ABK dengan data lengkap.</p><div class="owner-metrics">'+
-        '<div><span>Populasi / ABK</span><b>'+prodFmt(leagueMean.population,0)+' ekor</b></div>'+
-        '<div><span>Panen / ABK</span><b>'+prodFmt(leagueMean.birds,0)+' ekor</b></div>'+
-        '<div><span>Pendapatan / Ekor</span><b>Rp '+prodFmt(leagueMean.perBird,0)+'</b></div>'+
-        '<div><span>Laba / ABK</span><b>Rp '+prodFmt(leagueMean.profit,0)+'</b></div>'+
-        '<div><span>IP Rata-rata</span><b>'+prodFmt(leagueMean.ip,2)+'</b></div>'+
-        '<div><span>FCR Rata-rata</span><b>'+prodFmt(leagueMean.fcr,3)+'</b></div>'+
-        '<div><span>BW Rata-rata</span><b>'+prodFmt(leagueMean.bw,3)+' kg</b></div>'+
+      (combinedRhpp?'<section class="owner-estimate-card"><h4>RHPP Gabungan Semua ABK</h4><p class="muted">Rekap gabungan '+prodFmt(combinedRhpp.abks,0)+' ABK dengan data lengkap pada siklus terpilih.</p><div class="owner-metrics">'+
+        '<div><span>Populasi Chick-In</span><b>'+prodFmt(combinedRhpp.population,0)+' ekor</b></div>'+
+        '<div><span>Hasil Panen</span><b>'+prodFmt(combinedRhpp.birds,0)+' ekor · '+prodFmt(combinedRhpp.kg,2)+' kg</b></div>'+
+        '<div><span>Pendapatan per Ekor Chick-In</span><b>Rp '+prodFmt(combinedRhpp.perChick,0)+'</b></div>'+
+        '<div><span>Laba RHPP Gabungan</span><b>Rp '+prodFmt(combinedRhpp.profit,0)+'</b></div>'+
+        '<div><span>Pakan Terpakai</span><b>'+prodFmt(combinedRhpp.feed,2)+' kg</b></div>'+
+        '<div><span>IP Gabungan</span><b>'+prodFmt(combinedRhpp.ip,2)+'</b></div>'+
+        '<div><span>FCR Gabungan</span><b>'+prodFmt(combinedRhpp.fcr,3)+'</b></div>'+
+        '<div><span>BW Gabungan</span><b>'+prodFmt(combinedRhpp.bw,3)+' kg</b></div>'+
       '</div></section>':'')+
       '<div class="report-actions"><button type="button" id="leagueBarnPrint">Cetak</button> <button type="button" id="leagueBarnPdf">PDF</button> <button type="button" id="leagueBarnExcel">Excel</button></div><div class="tablewrap"><table id="leagueBarnTable" class="owner-table"><thead><tr><th>Peringkat</th><th>ABK</th><th class="num">Siklus</th><th class="num">Total Populasi</th><th class="num">Total Ekor Panen</th><th class="num">Pendapatan/Ekor</th><th class="num">IP</th><th class="num">FCR</th><th class="num">BW</th></tr></thead><tbody>'+
       league.map((x,i)=>{

@@ -140,17 +140,26 @@ test('DOA population correction retains closed snapshot fallback and existing ac
  assert.doesNotMatch(sql,/update public\./i);
 });
 
-test('Liga ABK per-kandang calculates equal-weight RHPP averages across complete ABKs',()=>{
+test('Liga ABK per-kandang builds a combined RHPP across complete ABKs',()=>{
  const dom=new JSDOM('',{runScripts:'outside-only'}),w=dom.window;
  w.eval(`var prodNum=v=>Number(v)||0; var BMSCore={dateAdd:(date,days)=>date}`);
  w.eval(src('modules/bms-production.js'));
  const rows=[
-  {totalPopulation:1000,birds:900,perBird:10000,ip:400,fcr:1.5,bw:2,profit:9000000},
-  {totalPopulation:2000,birds:1600,perBird:20000,ip:500,fcr:2,bw:2.5,profit:32000000}
+  {totalPopulation:1000,birds:900,kg:1800,feed:2700,age:40,profit:9000000},
+  {totalPopulation:2000,birds:1600,kg:4000,feed:8000,age:50,profit:32000000}
  ];
- assert.deepEqual(JSON.parse(JSON.stringify(w.leagueAbkAverageRows(rows))),{
-  abks:2,population:1500,birds:1250,perBird:15000,ip:450,fcr:1.75,bw:2.25,profit:20500000
- });
- assert.equal(w.leagueAbkAverageRows([]),null);
+ const combined=w.leagueAbkCombinedRhpp(rows);
+ assert.equal(combined.abks,2);
+ assert.equal(combined.population,3000);
+ assert.equal(combined.birds,2500);
+ assert.equal(combined.kg,5800);
+ assert.equal(combined.feed,10700);
+ assert.equal(combined.profit,41000000);
+ assert.equal(combined.perChick,41000000/3000);
+ assert.equal(combined.bw,5800/2500);
+ assert.equal(combined.fcr,10700/5800);
+ assert.equal(combined.age,46.4);
+ assert.ok(combined.ip>0);
+ assert.equal(w.leagueAbkCombinedRhpp([]),null);
  dom.window.close();
 });

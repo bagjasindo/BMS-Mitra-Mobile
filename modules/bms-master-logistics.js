@@ -2421,7 +2421,7 @@ async function logisticsReturnPage(editId=null){
   const availableReturnItems=()=>{
     const assignment=selectedReturnAssignment();
     if(!assignment)return [];
-    const itemIds=[...new Set(returnShipmentRows(assignment.id).map(line=>line.item_id))];
+    const itemIds=[...new Set(returnShipmentRows(assignment.id).filter(line=>itemsAll.find(item=>item.id===line.item_id)?.category!=='DOC').map(line=>line.item_id))];
     return itemIds.map(itemId=>{
       const item=itemsAll.find(x=>x.id===itemId);
       if(!item)return null;

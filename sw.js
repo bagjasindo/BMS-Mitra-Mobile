@@ -1,5 +1,5 @@
 const CACHE_PREFIX='bms-pwa-shell-';
-const CACHE_NAME=CACHE_PREFIX+'v2402-rhpp-transaction-details';
+const CACHE_NAME=CACHE_PREFIX+'v2404-rhpp-all-harvest-rows';
 const SHELL=[
   './',
   './index.html',
@@ -10,7 +10,7 @@ const SHELL=[
   './vendor/supabase-2.57.0.js',
   './bms-data-config.js?v=2386-classic-restored',
   './bms-core.js?v=2402-rhpp-transaction-details',
-  './main-2321.js?v=2395-logistics-expedition',
+  './main-2321.js?v=2404-rhpp-all-harvest-rows',
   './modules/bms-master-logistics.js?v=2386-classic-restored',
   './modules/bms-production.js?v=2402-rhpp-transaction-details',
   './modules/bms-finance.js?v=2387-expedition-date-order',
@@ -18,8 +18,8 @@ const SHELL=[
   './modules/bms-performance.js?v=2394-admin-performance',
   './modules/bms-expedition-reports.js?v=2395-logistics-expedition',
   './modules/bms-admin.js?v=2395-logistics-expedition',
-  './modules/bms-rhpp-details.js?v=2402-rhpp-transaction-details',
-  './modules/bms-rhpp-users.js?v=2402-rhpp-transaction-details',
+  './modules/bms-rhpp-details.js?v=2404-rhpp-all-harvest-rows',
+  './modules/bms-rhpp-users.js?v=2404-rhpp-all-harvest-rows',
   './modules/bms-dashboard-reports.js?v=2391-dashboard-feed',
   './bms-start.js?v=2386-classic-restored',
   './assets/bms_login_logo.jpg',

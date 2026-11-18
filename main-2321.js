@@ -1129,6 +1129,7 @@ function enforceOwnerReadOnly(){
 function enhanceGlobalHistoryTables(){
   const panels=[...root.querySelectorAll('main section.panel')];
   for(const panel of panels){
+    if(panel.closest('#rhppExportArea'))continue;
     const heading=String(panel.querySelector('h3,h4')?.textContent||'').trim();
     if(!/^(riwayat|data |daftar |rincian |stok |antrean )/i.test(heading))continue;
     if(/laporan|rekap|laba|arus kas|rhpp|ringkasan/i.test(heading))continue;

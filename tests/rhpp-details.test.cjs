@@ -142,7 +142,7 @@ test('DOA population correction retains closed snapshot fallback and existing ac
 
 test('Liga ABK per-kandang calculates equal-weight RHPP averages across complete ABKs',()=>{
  const dom=new JSDOM('',{runScripts:'outside-only'}),w=dom.window;
- w.eval(`var prodNum=v=>Number(v)||0`);
+ w.eval(`var prodNum=v=>Number(v)||0; var BMSCore={dateAdd:(date,days)=>date}`);
  w.eval(src('modules/bms-production.js'));
  const rows=[
   {totalPopulation:1000,birds:900,perBird:10000,ip:400,fcr:1.5,bw:2,profit:9000000},

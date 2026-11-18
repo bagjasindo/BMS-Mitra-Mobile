@@ -71,7 +71,7 @@ function rhppOnePageHtml(source,company={}){
       (table.querySelector('tfoot')?.outerHTML||'')+'</table></div>';
   };
   const details=group=>{
-    const panels=[...source.querySelectorAll('.rhpp-panel[data-rhpp-group="'+group+'"]')].filter(p=>!p.hasAttribute('data-rhpp-controls));
+    const panels=[...source.querySelectorAll('.rhpp-panel[data-rhpp-group="'+group+'"]')].filter(p=>!p.hasAttribute('data-rhpp-controls'));
     return panels.map(tableMarkup).join('')||'<p class="empty">Tidak ada transaksi.</p>';
   };
   const identity=rows(panel('Identitas Siklus'));

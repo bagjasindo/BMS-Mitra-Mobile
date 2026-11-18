@@ -214,7 +214,7 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
     const area=document.querySelector('#rhppExportArea'),html=rhppOnePageHtml(area,{company_name:'BMS'});
     const frame=document.createElement('iframe');frame.style.cssText='position:fixed;left:-3000px;top:0;width:800px;height:1150px;border:0';document.body.append(frame);
     frame.srcdoc=html;await new Promise(resolve=>frame.onload=resolve);await new Promise(resolve=>setTimeout(resolve,30));
-    const d=frame.contentDocument,main=d.querySelector('main'),harvest=document.querySelector('.rhpp-harvest'),harvestTable=document.querySelector('.rhpp-harvest-table'),result={height:main.scrollHeight+d.querySelector('header').getBoundingClientRect().height,text:d.body.textContent,tables:d.querySelectorAll('table').length,bodyFont:parseFloat(getComputedStyle(d.body).fontSize),tableFont:parseFloat(getComputedStyle(d.querySelector('.detail-table')).fontSize),style:d.querySelector('style').textContent,screenRows:harvestTable.querySelectorAll('tbody tr').length,hiddenRows:[...harvestTable.querySelectorAll('tbody tr')].filter(r=>r.hidden||getComputedStyle(r).display==='none').length,quickFilters:harvest.querySelectorAll('.bms-table-quick-filter').length,harvestHeaders:[...harvestTable.querySelectorAll('thead th')].map(x=>x.textContent.trim())};frame.remove();
+    const d=frame.contentDocument,main=d.querySelector('main'),harvest=document.querySelector('.rhpp-harvest'),harvestTable=document.querySelector('.rhpp-harvest-table'),result={height:main.scrollHeight+d.querySelector('header').getBoundingClientRect().height,text:d.body.textContent,tables:d.querySelectorAll('table').length,bodyFont:parseFloat(getComputedStyle(d.body).fontSize),tableFont:parseFloat(getComputedStyle(d.querySelector('.detail-table')).fontSize),style:d.querySelector('style').textContent,screenRows:harvestTable.querySelectorAll('tbody tr').length,hiddenRows:[...harvestTable.querySelectorAll('tbody tr')].filter(r=>r.hidden||getComputedStyle(r).display==='none').length,quickFilters:harvest.querySelectorAll('.bms-table-quick-filter').length,harvestHeaders:[...harvestTable.querySelectorAll('thead th')].map(x=>x.textContent.trim()),screenAgeCells:[...harvestTable.querySelectorAll('tbody tr')].slice(0,3).map(r=>r.cells[1].textContent.trim()),printAgeCells:[...[...d.querySelectorAll('.detail-block')].find(x=>x.querySelector('h3')?.textContent.includes('Hasil Tangkap'))?.querySelectorAll('tbody tr')||[]].slice(0,3).map(r=>r.cells[1].textContent.trim())};frame.remove();
     return result;
   `);
   assert.ok(paper.bodyFont>=11,'RHPP print body text should remain readable: '+paper.bodyFont+'px');
@@ -227,8 +227,8 @@ async function until(expression){for(let i=0;i<100;i++){if(await evaluate(expres
   assert.ok(paper.text.includes('Rp 72.900.000,00'));
   assert.ok(paper.tables>=7);
   assert.deepEqual(paper.harvestHeaders.slice(0,4),['Tanggal','Umur Panen','Nama Bakul','No Mbl']);
-  assert.ok(paper.text.includes('19 hari'),'Panen age should count from chick-in date');
-  assert.ok(paper.text.includes('31 hari'),'Later harvest age should be calculated per transaction');
+  assert.deepEqual(paper.screenAgeCells,['19 hari','-','31 hari']);
+  assert.deepEqual(paper.printAgeCells,['19 hari','-','31 hari'],'Print must preserve each row age');
   assert.equal(paper.hiddenRows,0,'All harvest rows should stay visible on screen');
   assert.equal(paper.quickFilters,0,'RHPP harvest table should not be paginated');
   assert.ok(!paper.text.includes('Catatan / Status'));

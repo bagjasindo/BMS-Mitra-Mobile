@@ -747,6 +747,16 @@ async function logisticsContractPage(){
 
 }
 
+function normalizeOptionalShippingNote(value){
+  const note=String(value||'').trim();
+  return note==='-'?'':note;
+}
+function findDuplicateShippingNote(rows,value,exceptId=''){
+  const note=normalizeOptionalShippingNote(value).toLowerCase();
+  if(!note)return null;
+  return (rows||[]).find(row=>normalizeOptionalShippingNote(row.shipping_note_number).toLowerCase()===note&&row.id!==exceptId)||null;
+}
+
 async function logisticsShippingPage(editId=null){
   const [br,ir,sr,sir,ar,kr,cpr]=await Promise.all([
     db.from('barns').select('id,code,name,location,kind,active').eq('active',true).order('code',{ascending:true}),
@@ -780,14 +790,14 @@ async function logisticsShippingPage(editId=null){
   const todayID=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 
   let html='<section class="panel"><h3>Pengiriman</h3>'+
-    '<p class="muted">Pengiriman ini khusus Siklus Mitra. Pilih kandang dengan Siklus Mitra aktif, isi No. SJ, lalu tambahkan Sapronak dan jumlah kiriman.</p>'+
+    '<p class="muted">Pengiriman ini khusus Siklus Mitra. Pilih kandang dengan Siklus Mitra aktif, No. SJ boleh dikosongkan, lalu tambahkan Sapronak dan jumlah kiriman.</p>'+
     '<form id="logisticsShippingForm" class="form-vertical">'+
       '<input type="hidden" name="shipment_id" value="'+(selected?esc(selected.id):'')+'">'+
       '<label>Cari / Pilih Kandang<input id="shippingBarnSearch" autocomplete="off" placeholder="Contoh: cicurug" value="'+(selected?esc((barns.find(b=>b.id===selected.barn_id)?.code||'')+' · '+(barns.find(b=>b.id===selected.barn_id)?.name||'')):'')+'" '+(selected?'readonly':(locked?'disabled':''))+' required></label>'+
       '<input type="hidden" name="barn_id" id="shippingBarnId" value="'+(selected?esc(selected.barn_id):'')+'">'+
       '<div id="shippingBarnSuggestions" class="search-suggestions"></div>'+
       '<label>Tanggal Pengiriman<input type="date" name="shipment_date" value="'+esc(selected?.shipment_date||todayID())+'" '+(locked?'disabled':'')+' required></label>'+
-      '<label>No. SJ Kiriman<input name="shipping_note_number" value="'+esc(selected?.shipping_note_number||'')+'" '+(locked?'disabled':'')+' required></label>'+
+      '<label>No. SJ Kiriman (Opsional)<input name="shipping_note_number" placeholder="Boleh dikosongkan" value="'+esc(selected?.shipping_note_number||'')+'" '+(locked?'disabled':'')+'></label>'+
       '<label>Catatan<textarea name="notes" '+(locked?'disabled':'')+'>'+esc(selected?.notes||'')+'</textarea></label>'+
     '</form>';
 
@@ -1105,9 +1115,8 @@ async function logisticsShippingPage(editId=null){
       const arr=window.__logisticsDraftItems||[];
       if(!barnId)return msg('Kandang transaksi tidak ditemukan.');
       if(!assignment)return msg('Siklus transaksi tidak ditemukan atau belum dibuka oleh Administrator.');
-      if(!fd.get('shipping_note_number'))return msg('No. SJ Kiriman wajib diisi.');
-      const sj=String(fd.get('shipping_note_number')||'').trim();
-      const duplicate=shipments.find(x=>String(x.shipping_note_number||'').trim().toLowerCase()===sj.toLowerCase()&&x.id!==fd.get('shipment_id'));
+      const sj=normalizeOptionalShippingNote(fd.get('shipping_note_number'));
+      const duplicate=findDuplicateShippingNote(shipments,sj,fd.get('shipment_id'));
       if(duplicate)return msg('No. SJ '+sj+' sudah pernah digunakan. Gunakan No. SJ lain.');
       if(!arr.length)return msg('Tambahkan minimal satu Sapronak dan jumlah kirimannya.');
       if(arr.some(x=>!Number.isFinite(Number(x.quantity))||Number(x.quantity)<=0))return msg('Jumlah kiriman harus lebih dari 0.');
@@ -1118,7 +1127,7 @@ async function logisticsShippingPage(editId=null){
         p_barn_id:barnId,
         p_assignment_id:assignment.id,
         p_shipment_date:fd.get('shipment_date'),
-        p_shipping_note_number:fd.get('shipping_note_number')||null,
+        p_shipping_note_number:sj||null,
         p_notes:fd.get('notes')||null,
         p_items:arr.map(x=>({item_id:x.item_id,quantity:x.quantity,unit_price:x.unit_price}))
       });

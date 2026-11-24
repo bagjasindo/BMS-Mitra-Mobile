@@ -1,5 +1,5 @@
 const CACHE_PREFIX='bms-pwa-shell-';
-const CACHE_NAME=CACHE_PREFIX+'v2408-liga-abk-combined-rhpp';
+const CACHE_NAME=CACHE_PREFIX+'v2409-optional-shipping-sj';
 const SHELL=[
   './',
   './index.html',
@@ -11,8 +11,8 @@ const SHELL=[
   './bms-data-config.js?v=2386-classic-restored',
   './bms-core.js?v=2402-rhpp-transaction-details',
   './main-2321.js?v=2404-rhpp-all-harvest-rows',
-  './modules/bms-master-logistics.js?v=2408-liga-abk-combined-rhpp',
-  './modules/bms-production.js?v=2408-liga-abk-combined-rhpp',
+  './modules/bms-master-logistics.js?v=2409-optional-shipping-sj',
+  './modules/bms-production.js?v=2409-optional-shipping-sj',
   './modules/bms-finance.js?v=2387-expedition-date-order',
   './modules/bms-inventory.js?v=2389-master-search',
   './modules/bms-performance.js?v=2394-admin-performance',

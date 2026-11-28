@@ -81,6 +81,48 @@ function dashboardLeagueIp(g,assignment,ci){
   return age&&fcr&&avg?(survival*avg*100)/(age*fcr):0;
 }
 
+
+function dashboardClosedRecapIp(g,assignments,chicks,finals){
+  // Match Rekap Produksi's default CLOSED-cycle aggregation, including its historical fallback.
+  const abkResults=g.abk_results||[],abkSizes=g.abk_result_sizes||[],links=g.links||[];
+  const rows=(assignments||[]).filter(a=>!a.active).map(a=>{
+    const ci=(chicks||[]).find(x=>x.contract_assignment_id===a.id);
+    const cycleDate=ci?.arrived_on||a.start_date||'';
+    if(!cycleDate)return null;
+    const resultRows=abkResults.filter(r=>r.contract_assignment_id===a.id);
+    const resultIds=new Set(resultRows.map(r=>r.id));
+    const sizes=abkSizes.filter(s=>resultIds.has(s.result_id));
+    const hasLeagueData=resultRows.length>0&&sizes.some(s=>prodNum(s.birds)>0||prodNum(s.weight_kg)>0);
+    if(!hasLeagueData){
+      const final=(finals||[]).find(x=>x.contract_assignment_id===a.id);
+      if(final){
+        const chickIn=prodNum(final.chick_in_birds),chickOut=prodNum(final.total_harvest_birds),kg=prodNum(final.total_harvest_kg);
+        return {chickIn,chickOut,mortBirds:Math.max(0,chickIn-chickOut),kg,feed:prodNum(final.net_feed_kg),age:prodNum(final.weighted_age),performanceBirds:chickOut,performanceKg:kg};
+      }
+    }
+    const assignmentLinks=links.filter(l=>l.contract_assignment_id===a.id);
+    const chickIn=assignmentLinks.reduce((sum,l)=>sum+prodNum(l.initial_birds),0);
+    const chickOut=sizes.reduce((sum,s)=>sum+prodNum(s.birds),0);
+    const kg=sizes.reduce((sum,s)=>sum+prodNum(s.weight_kg),0);
+    const feed=assignmentLinks.reduce((sum,l)=>sum+
+      (prodNum(l.feed_pre_bags)+prodNum(l.feed_starter_bags)+prodNum(l.feed_finisher_bags))*50,0);
+    const ageWeight=ci?sizes.reduce((sum,s)=>sum+prodAge(ci.arrived_on,s.harvest_date)*prodNum(s.birds),0):0;
+    const age=chickOut?ageWeight/chickOut:0;
+    return {chickIn,chickOut,mortBirds:Math.max(0,chickIn-chickOut),kg,feed,age,performanceBirds:chickOut,performanceKg:kg};
+  }).filter(Boolean);
+  const totals=rows.reduce((o,x)=>{
+    const birds=prodNum(x.performanceBirds||x.chickOut),kg=prodNum(x.performanceKg||x.kg);
+    o.chickIn+=prodNum(x.chickIn);o.mortBirds+=prodNum(x.mortBirds);o.birds+=birds;o.kg+=kg;o.feed+=prodNum(x.feed);
+    o.ageWeight+=prodNum(x.age)*Math.max(1,birds);o.ageBase+=Math.max(1,birds);
+    return o;
+  },{chickIn:0,mortBirds:0,birds:0,kg:0,feed:0,ageWeight:0,ageBase:0});
+  const age=totals.ageBase?totals.ageWeight/totals.ageBase:0;
+  const avg=totals.birds?totals.kg/totals.birds:0;
+  const fcr=totals.kg?totals.feed/totals.kg:0;
+  const survival=totals.chickIn?Math.min(100,(totals.chickIn-totals.mortBirds)/totals.chickIn*100):0;
+  return age&&fcr&&avg?(survival*avg*100)/(age*fcr):0;
+}
+
 function renderDashboardTemplate(cfg){
   const kpis=(cfg.kpis||[]).slice(0,4);
   const kpiHtml=kpis.map(x=>'<div class="card">'+esc(x.label||'')+'<strong>'+(x.value||'-')+'</strong><small>'+esc(x.small||'')+'</small></div>').join('');
@@ -149,7 +191,7 @@ async function buildDashboardModel(){
         {label:'Kandang Aktif',value:'-',small:'periode berjalan'},
         {label:'Kandang Rehat',value:'-',small:'tidak ada periode aktif'},
         {label:'Total Populasi Berjalan',value:'-',small:'ekor · seluruh kandang aktif'},
-        {label:'IP Gabungan Produksi Closed',value:'-',small:'gabungan seluruh snapshot produksi CLOSED'}
+        {label:'IP Gabungan Produksi Closed',value:'-',small:'siklus CLOSED · rumus sama dengan Rekap Produksi'}
       ],
       mainTitle:'Performa Kandang Terbaru',
       mainSubtitle:'Recording terakhir setiap kandang aktif; tanggal ditampilkan per kandang.',
@@ -228,26 +270,7 @@ async function buildDashboardModel(){
     .filter(h=>active.some(a=>a.id===h.contract_assignment_id)&&String(h.harvested_on||'')<=ownerToday)
     .reduce((sum,h)=>sum+prodNum(h.birds),0);
   const ownerRunningPopulation=Math.max(0,ownerRunningInitial-ownerRunningDead-ownerRunningHarvested);
-  const ownerClosedRhpp=rhppFinalRows.filter(x=>prodNum(x.total_harvest_birds)>0);
-  const ownerClosedTotals=ownerClosedRhpp.reduce((o,x)=>{
-    const birds=prodNum(x.total_harvest_birds);
-    o.chickIn+=prodNum(x.chick_in_birds);
-    o.depletion+=prodNum(x.depletion_birds);
-    o.birds+=birds;
-    o.kg+=prodNum(x.total_harvest_kg);
-    o.feed+=prodNum(x.net_feed_kg);
-    o.ageWeight+=prodNum(x.weighted_age)*Math.max(1,birds);
-    return o;
-  },{chickIn:0,depletion:0,birds:0,kg:0,feed:0,ageWeight:0});
-  const ownerClosedAge=ownerClosedTotals.birds>0?ownerClosedTotals.ageWeight/ownerClosedTotals.birds:0;
-  const ownerClosedAvg=ownerClosedTotals.birds>0?ownerClosedTotals.kg/ownerClosedTotals.birds:0;
-  const ownerClosedFcr=ownerClosedTotals.kg>0?ownerClosedTotals.feed/ownerClosedTotals.kg:0;
-  const ownerClosedSurvival=ownerClosedTotals.chickIn>0
-    ?Math.min(100,(ownerClosedTotals.chickIn-ownerClosedTotals.depletion)/ownerClosedTotals.chickIn*100)
-    :0;
-  const ownerClosedIpTotal=ownerClosedAge&&ownerClosedFcr&&ownerClosedAvg
-    ?(ownerClosedSurvival*ownerClosedAvg*100)/(ownerClosedAge*ownerClosedFcr)
-    :0;
+  const ownerClosedIpTotal=dashboardClosedRecapIp(g,d.assignments,d.chicks,rhppFinalRows);
 
   const performanceCards=metrics.map(x=>{
     const b=d.barns.find(v=>v.id===x.a.barn_id);

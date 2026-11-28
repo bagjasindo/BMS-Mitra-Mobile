@@ -475,7 +475,7 @@ async function buildDashboardModel(){
     bottomTitle:'Klasemen Performa ABK',
     bottomSubtitle:'Musim sejak '+prodDateId(leagueSetting.data?.season_start||'')+' · Bobot: Pendapatan/Ekor 50% · FCR 30% · IP 20%',
     bottomBadge:'<span class="owner-trophy">🏆</span>',
-    bottomHtml:'<div class="owner-desktop-only tablewrap"><table class="owner-table"><thead><tr><th>Peringkat</th><th>ABK</th><th>Kandang Terakhir</th><th class="num">Siklus</th><th class="num">Total Populasi</th><th class="num">Total Ekor Panen</th><th class="num">Pendapatan/Ekor</th><th class="num">IP</th><th class="num">FCR</th><th class="num">BW</th></tr></thead><tbody>'+leagueRows+'</tbody></table></div><div class="owner-mobile-only owner-league-mobile">'+leagueCards+'</div>'+(league.length?'':'<p class="muted">Belum ada hasil Liga ABK yang lengkap.</p>')
+    bottomHtml:'<div class="report-actions dashboard-league-actions"><button type="button" id="dashboardLeaguePrint">Cetak / PDF</button></div><div class="owner-desktop-only tablewrap"><table id="dashboardLeagueTable" class="owner-table"><thead><tr><th>Peringkat</th><th>ABK</th><th>Kandang Terakhir</th><th class="num">Siklus</th><th class="num">Total Populasi</th><th class="num">Total Ekor Panen</th><th class="num">Pendapatan/Ekor</th><th class="num">IP</th><th class="num">FCR</th><th class="num">BW</th></tr></thead><tbody>'+leagueRows+'</tbody></table></div><div class="owner-mobile-only owner-league-mobile">'+leagueCards+'</div>'+(league.length?'':'<p class="muted">Belum ada hasil Liga ABK yang lengkap.</p>')
   };
   if(err)msg(err.message);
 }
@@ -496,6 +496,14 @@ async function dashboard(){
   if(tab!=='dashboard'||!model)return;
   model.eyebrow='DASHBOARD PRODUKSI';
   renderDashboardTemplate(model);
+  const leaguePrint=root.querySelector('#dashboardLeaguePrint');
+  if(leaguePrint)leaguePrint.onclick=()=>{
+    const table=root.querySelector('#dashboardLeagueTable');
+    if(!table)return msg('Data peringkat belum tersedia.');
+    const description=root.querySelector('.owner-league .owner-section-title .muted')?.textContent||'';
+    const html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Klasemen Performa ABK</title><style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{font:10pt Arial,sans-serif;color:#17212b;margin:0}h1{font-size:18pt;margin:0 0 5px}p{margin:0 0 12px;color:#465564}table{width:100%;border-collapse:collapse;font-size:9pt}th,td{border:1px solid #aab8c2;padding:6px;text-align:left;vertical-align:top}th{background:#e8f1f5;font-weight:700}.num{text-align:right}tr{break-inside:avoid;page-break-inside:avoid}</style></head><body><h1>Klasemen Performa ABK</h1><p>'+esc(description)+'</p>'+table.outerHTML+'</body></html>';
+    BMSCore.savePdfHtml(html,'Klasemen_Performa_ABK.pdf').catch(error=>msg(error?.message||'Cetak peringkat gagal dibuka.'));
+  };
   root.querySelectorAll('[data-open-estimate]').forEach(card=>{
     const openEstimate=()=>{
       if(!canViewTab('estimasi'))return;

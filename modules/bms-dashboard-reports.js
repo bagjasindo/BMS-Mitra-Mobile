@@ -61,6 +61,26 @@ function dashboardFeedSummary(g,assignment){
   return {daily,remainingKg,remainingZak};
 }
 
+
+function dashboardLeagueIp(g,assignment,ci){
+  // Keep the dashboard IP identical to Rekap Produksi's Liga ABK calculation.
+  const links=(g.links||[]).filter(l=>l.contract_assignment_id===assignment.id);
+  const resultRows=(g.abk_results||[]).filter(r=>r.contract_assignment_id===assignment.id);
+  const resultIds=new Set(resultRows.map(r=>r.id));
+  const sizes=(g.abk_result_sizes||[]).filter(s=>resultIds.has(s.result_id));
+  const chickIn=links.reduce((sum,l)=>sum+prodNum(l.initial_birds),0);
+  const chickOut=sizes.reduce((sum,s)=>sum+prodNum(s.birds),0);
+  const kg=sizes.reduce((sum,s)=>sum+prodNum(s.weight_kg),0);
+  const feed=links.reduce((sum,l)=>sum+
+    (prodNum(l.feed_pre_bags)+prodNum(l.feed_starter_bags)+prodNum(l.feed_finisher_bags))*50,0);
+  const avg=chickOut?kg/chickOut:0;
+  const ageWeight=ci?sizes.reduce((sum,s)=>sum+prodAge(ci.arrived_on,s.harvest_date)*prodNum(s.birds),0):0;
+  const age=chickOut?ageWeight/chickOut:0;
+  const fcr=kg?feed/kg:0;
+  const survival=chickIn?Math.min(100,chickOut/chickIn*100):0;
+  return age&&fcr&&avg?(survival*avg*100)/(age*fcr):0;
+}
+
 function renderDashboardTemplate(cfg){
   const kpis=(cfg.kpis||[]).slice(0,4);
   const kpiHtml=kpis.map(x=>'<div class="card">'+esc(x.label||'')+'<strong>'+(x.value||'-')+'</strong><small>'+esc(x.small||'')+'</small></div>').join('');
@@ -175,7 +195,7 @@ async function buildDashboardModel(){
     const fcr=totalProducedKg>0?feed/totalProducedKg:0;
     const dep=initial>0?dead/initial*100:0;
     const age=prodNum(latest?.age_days);
-    const ip=age>0&&fcr>0?((100-dep)*bw*100)/(age*fcr):0;
+    const ip=dashboardLeagueIp(g,a,ci);
     const prevWs=prev?samples.filter(s=>s.recording_id===prev.id).map(s=>prodNum(s.weight_g)):[];
     const prevBwg=prevWs.length?prevWs.reduce((s,x)=>s+x,0)/prevWs.length:prodNum(prev?.avg_weight_kg)*1000;
     const st=d.standards.find(s=>(a.cycle_type==='MANDIRI'||s.contract_id===a.master_contract_id)&&s.template_name===a.performance_template_name&&prodNum(s.age_days)===age);

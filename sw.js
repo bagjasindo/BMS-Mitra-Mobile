@@ -1,5 +1,5 @@
 const CACHE_PREFIX='bms-pwa-shell-';
-const CACHE_NAME=CACHE_PREFIX+'v2410-mobile-abk-ranking-print';
+const CACHE_NAME=CACHE_PREFIX+'v2411-abk-ranking-fcr-weight';
 const SHELL=[
   './',
   './index.html',
@@ -20,7 +20,7 @@ const SHELL=[
   './modules/bms-admin.js?v=2395-logistics-expedition',
   './modules/bms-rhpp-details.js?v=2404-rhpp-all-harvest-rows',
   './modules/bms-rhpp-users.js?v=2404-rhpp-all-harvest-rows',
-  './modules/bms-dashboard-reports.js?v=2410-mobile-abk-ranking-print',
+  './modules/bms-dashboard-reports.js?v=2411-abk-ranking-fcr-weight',
   './bms-start.js?v=2386-classic-restored',
   './assets/bms_login_logo.jpg',
   './assets/bms_app_icon_180.png?v=6-original-20261001',

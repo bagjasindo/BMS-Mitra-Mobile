@@ -60,7 +60,7 @@
       await loadScript('./modules/bms-admin.js?v=2395-logistics-expedition',30000);
       await loadScript('./modules/bms-rhpp-details.js?v=2404-rhpp-all-harvest-rows',30000);
       await loadScript('./modules/bms-rhpp-users.js?v=2404-rhpp-all-harvest-rows',30000);
-      await loadScript('./modules/bms-dashboard-reports.js?v=2410-mobile-abk-ranking-print',30000);
+      await loadScript('./modules/bms-dashboard-reports.js?v=2411-abk-ranking-fcr-weight',30000);
       await loadScript('./bms-start.js?v=2386-classic-restored',30000);
     }catch(error){
       console.error(error);
@@ -78,7 +78,7 @@ if('serviceWorker' in navigator){
     location.reload();
   });
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js?v=2410-mobile-abk-ranking-print',{scope:'./'}).then(reg=>{
+    navigator.serviceWorker.register('./sw.js?v=2411-abk-ranking-fcr-weight',{scope:'./'}).then(reg=>{
       reg.update().catch(()=>{});
       if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});
       reg.addEventListener('updatefound',()=>{

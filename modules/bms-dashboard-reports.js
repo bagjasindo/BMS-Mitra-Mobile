@@ -410,7 +410,7 @@ async function buildDashboardModel(){
       perBird:g.birds?g.profit/g.birds:0
     };
   }).filter(g=>leagueAbks.find(e=>e.id===g.abk_id)?.active!==false);
-  const max=k=>Math.max(...league.map(x=>prodNum(x[k])),0),min=k=>Math.min(...league.map(x=>prodNum(x[k])).filter(v=>v>0),0);
+  const max=k=>Math.max(...league.map(x=>prodNum(x[k])),0),min=k=>{const values=league.map(x=>prodNum(x[k])).filter(v=>v>0);return values.length?Math.min(...values):0};
   league.forEach(x=>{const hi=k=>max(k)?prodNum(x[k])/max(k):0,lo=k=>prodNum(x[k])>0&&min(k)>0?min(k)/prodNum(x[k]):0;x.score=hi('perBird')*.50+lo('fcr')*.30+hi('ip')*.20});
   league.sort((a,b)=>b.score-a.score);
   const leagueRows=league.map((x,i)=>{

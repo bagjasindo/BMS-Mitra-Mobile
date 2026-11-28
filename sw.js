@@ -1,5 +1,5 @@
 const CACHE_PREFIX='bms-pwa-shell-';
-const CACHE_NAME=CACHE_PREFIX+'v2410-mobile-abk-ranking-print';
+const CACHE_NAME=CACHE_PREFIX+'v2411-abk-ranking-fcr-weight';
 const SHELL=[
   './',
   './index.html',

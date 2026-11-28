@@ -1,5 +1,5 @@
 const CACHE_PREFIX='bms-pwa-shell-';
-const CACHE_NAME=CACHE_PREFIX+'v2411-abk-ranking-fcr-weight';
+const CACHE_NAME=CACHE_PREFIX+'v2412-dashboard-ip-liga-abk';
 const SHELL=[
   './',
   './index.html',
